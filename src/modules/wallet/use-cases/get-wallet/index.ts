@@ -31,7 +31,7 @@ export class GetWallet {
     const [heroes, houses, averageFarm] = await Promise.all([
       getHeroesFromGenIds(genIds.heroes, network),
       getHousesFromGenIds(genIds.houses),
-      this.mapRewardRepository.getAverageRewardByWalletId(walletEntity.id),
+      this.mapRewardRepository.getAverageRewardByWalletId(walletEntity?.id),
     ]);
 
     return {
