@@ -1,0 +1,96 @@
+import { WalletNetwork } from '@/database/models/Wallet';
+import { ABI_BALANCE } from '@/utils/web3/ABI/balance-abi';
+import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
+import { ABI_ROCK } from '@/utils/web3/ABI/rock-abi';
+import {
+  getContractMultiCallBsc,
+  getContractMultiCallPolygon,
+  instanceBscWeb3,
+  instancePolygonWeb3,
+} from '@/utils/web3/web3';
+
+export async function getWalletGenIds(wallet: string, network: WalletNetwork) {
+  const fnInstance =
+    network === WalletNetwork.BSC ? instanceBscWeb3 : instancePolygonWeb3;
+  const fnContractMult =
+    network === WalletNetwork.BSC
+      ? getContractMultiCallBsc()
+      : getContractMultiCallPolygon();
+
+  const contractAddressHero =
+    network === WalletNetwork.BSC
+      ? process.env.CONTRACT_HERO_BSC
+      : process.env.CONTRACT_HERO_POLYGON;
+  const contractAddressHouse =
+    network === WalletNetwork.BSC
+      ? process.env.CONTRACT_HOUSE_BSC
+      : process.env.CONTRACT_HOUSE_POLYGON;
+  const contractAddressBomb =
+    network === WalletNetwork.BSC
+      ? process.env.CONTRACT_BOMB_BSC
+      : process.env.CONTRACT_BOMB_POLYGON;
+  const contractAddressSen =
+    network === WalletNetwork.BSC
+      ? process.env.CONTRACT_SEN_BSC
+      : process.env.CONTRACT_SEN_POLYGON;
+  const contractAddressRock =
+    network === WalletNetwork.BSC
+      ? process.env.CONTRACT_ROCK_BSC
+      : process.env.CONTRACT_ROCK_POLYGON;
+
+  const contractHero = new fnInstance.eth.Contract(
+    ABI_HERO,
+    contractAddressHero,
+  );
+  const contractHouse = new fnInstance.eth.Contract(
+    ABI_HERO,
+    contractAddressHouse,
+  );
+  const contractBomb = new fnInstance.eth.Contract(
+    ABI_BALANCE,
+    contractAddressBomb,
+  );
+  const contractSen = new fnInstance.eth.Contract(
+    ABI_BALANCE,
+    contractAddressBomb,
+  );
+  const contractRock = new fnInstance.eth.Contract(
+    ABI_ROCK,
+    contractAddressBomb,
+  );
+
+  const targets = [
+    contractAddressHero,
+    contractAddressHouse,
+    contractAddressBomb,
+    contractAddressSen,
+    contractAddressRock,
+  ];
+  const data = [
+    contractHero.methods.getTokenDetailsByOwner(wallet).encodeABI(),
+    contractHouse.methods.getTokenDetailsByOwner(wallet).encodeABI(),
+    contractBomb.methods.balanceOf(wallet).encodeABI(),
+    contractSen.methods.balanceOf(wallet).encodeABI(),
+    contractRock.methods.getTotalRockByUser(wallet).encodeABI(),
+  ];
+
+  const result = await fnContractMult.methods.multiCall(targets, data).call();
+
+  return {
+    heroes: fnInstance.eth.abi.decodeParameter(
+      'uint256[]',
+      result[0],
+    ) as number[],
+    houses: fnInstance.eth.abi.decodeParameter(
+      'uint256[]',
+      result[1],
+    ) as number[],
+    tokens: {
+      bomb:
+        Number(fnInstance.eth.abi.decodeParameter('uint256', result[2])) / 1e18,
+      sen:
+        Number(fnInstance.eth.abi.decodeParameter('uint256', result[3])) / 1e18,
+      rock: Number(fnInstance.eth.abi.decodeParameter('uint256', result[4])),
+    },
+  };
+}

@@ -1,0 +1,18 @@
+const REWARD_MAP = {
+  // BOMBERMAN: "Bomberman",
+  BCOIN: 'BCoin',
+  BCOIN_DEPOSITED: 'BCoin Deposited',
+  SENSPARK: 'Senspark',
+  MSPc: 'MSPc',
+  BOSS_TICKET: 'BOSS TICKET',
+  PVP_TICKET: 'PVP TICKET',
+  COIN: 'COIN',
+  NFT_PVP: 'NFT PVP',
+  LUS: 'Lus',
+  WOFM: 'WOFM',
+  LUS_NFT: 'Lus NFT',
+  KEY: 'Key',
+  GEM: 'Gem',
+  GEM_LOCKED: 'Gem Locked',
+  GOLD: 'Gold',
+} as const;
