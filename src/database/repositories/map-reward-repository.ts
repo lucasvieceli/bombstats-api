@@ -13,6 +13,8 @@ export class MapRewardRepository extends Repository<MapReward> {
   }
 
   async getAverageRewardByWalletId(walletId: string) {
+    if (!walletId) return null;
+
     const lastFarm = await this.findOne({
       where: { walletId },
       order: { createdAt: 'DESC' },
