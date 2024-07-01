@@ -16,12 +16,12 @@ export class OnDisconnect {
   ) {}
   async execute({ wallet, network }: IOnDisconnect) {
     let walletEntity = await this.walletRepository.findOne({
-      where: { walletId: wallet, network },
+      where: { walletId: wallet.toLocaleLowerCase(), network },
     });
 
     if (!walletEntity) {
       walletEntity = this.walletRepository.create({
-        walletId: wallet,
+        walletId: wallet.toLocaleLowerCase(),
         online: WalletStatus.OFFLINE,
       });
       return await this.walletRepository.save(walletEntity);

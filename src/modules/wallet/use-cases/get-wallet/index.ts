@@ -1,5 +1,7 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { MapRewardRepository } from '@/database/repositories/map-reward-repository';
+import { StakeRankingWalletRepository } from '@/database/repositories/stake-ranking-wallet';
+import { StakeRepository } from '@/database/repositories/stake-repository';
 import { WalletRepository } from '@/database/repositories/wallet-repository';
 import { validateEthereumAddress } from '@/utils/web3/check-wallet';
 import { getHeroesFromGenIds } from '@/utils/web3/hero';
@@ -17,6 +19,8 @@ export class GetWallet {
   constructor(
     private walletRepository: WalletRepository,
     private mapRewardRepository: MapRewardRepository,
+    private stakeRankingWalletRepository: StakeRankingWalletRepository,
+    private stakeRepository: StakeRepository,
   ) {}
   async execute({ wallet, network }: IGetWallet) {
     if (!validateEthereumAddress(wallet)) {
@@ -28,11 +32,14 @@ export class GetWallet {
     });
     const genIds = await getWalletGenIds(wallet, network);
 
-    const [heroes, houses, averageFarm] = await Promise.all([
-      getHeroesFromGenIds(genIds.heroes, network),
-      getHousesFromGenIds(genIds.houses),
-      this.mapRewardRepository.getAverageRewardByWalletId(walletEntity?.id),
-    ]);
+    const [heroes, houses, averageFarm, stakeRanking, stakes] =
+      await Promise.all([
+        getHeroesFromGenIds(genIds.heroes, network),
+        getHousesFromGenIds(genIds.houses),
+        this.mapRewardRepository.getAverageRewardByWalletId(walletEntity?.id),
+        this.stakeRankingWalletRepository.getPositionRanking(wallet, network),
+        this.stakeRepository.getStakesByWallet(wallet, network),
+      ]);
 
     return {
       walletId: wallet,
@@ -41,6 +48,8 @@ export class GetWallet {
       tokens: genIds.tokens,
       wallet: walletEntity,
       averageFarm,
+      stakeRanking,
+      stakes,
     };
   }
 }

@@ -1,6 +1,13 @@
 import { WalletNetwork } from '@/database/models/Wallet';
+import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
 import { ABI_STAKE } from '@/utils/web3/ABI/stake-abi';
 import { getMultiCalls } from '@/utils/web3/multi-calls';
+import {
+  getContractMultiCallBsc,
+  getContractMultiCallPolygon,
+  instanceBscWeb3,
+  instancePolygonWeb3,
+} from '@/utils/web3/web3';
 
 export interface IHero {
   id: number;
@@ -39,6 +46,65 @@ export async function getHeroesFromGenIds(
 
   return Promise.all(
     heroIds.map((id, index) => decodeHero(genIds[index], stakes[index])),
+  );
+}
+
+export async function getHeroesFromIds(
+  ids: number[] | string[],
+  network: WalletNetwork,
+) {
+  const fnInstance =
+    network === WalletNetwork.BSC ? instanceBscWeb3 : instancePolygonWeb3;
+  const fnContractMult =
+    network === WalletNetwork.BSC
+      ? getContractMultiCallBsc()
+      : getContractMultiCallPolygon();
+
+  const contractAddressHero =
+    network === WalletNetwork.BSC
+      ? process.env.CONTRACT_HERO_BSC
+      : process.env.CONTRACT_HERO_POLYGON;
+  const contractAddressStake =
+    network == WalletNetwork.POLYGON
+      ? process.env.CONTRACT_STAKE_POLYGON
+      : process.env.CONTRACT_STAKE_BSC;
+
+  const contractHero = new fnInstance.eth.Contract(
+    ABI_HERO,
+    contractAddressHero,
+  );
+  const contractStake = new fnInstance.eth.Contract(
+    ABI_STAKE,
+    contractAddressStake,
+  );
+
+  const targets = [
+    ...Array(ids.length).fill(contractAddressHero),
+    ...Array(ids.length).fill(contractAddressStake),
+  ];
+
+  const data = [
+    ...ids.map((id) => contractHero.methods.tokenDetails(id).encodeABI()),
+    ...ids.map((id) =>
+      contractStake.methods.getCoinBalancesByHeroId(id).encodeABI(),
+    ),
+  ];
+  const divisor = 10n ** 18n;
+
+  const result = (await fnContractMult.methods
+    .multiCall(targets, data)
+    .call()) as any[];
+
+  const heroes = result
+    .slice(0, ids.length)
+    .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
+  const stakes = result
+    .slice(ids.length)
+    .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
+  return Promise.all(
+    heroes.map((h: any, index: number) =>
+      decodeHero(h, Number(stakes[index]) / Number(divisor)),
+    ),
   );
 }
 

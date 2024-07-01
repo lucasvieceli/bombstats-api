@@ -10,10 +10,16 @@ export class WalletRepository extends Repository<Wallet> {
   }
 
   async createOrUpdate(walletId: string, network: WalletNetwork) {
-    let wallet = await this.findOne({ where: { walletId, network } });
+    let wallet = await this.findOne({
+      where: { walletId: walletId.toLowerCase(), network },
+    });
 
     if (!wallet) {
-      wallet = this.create({ walletId, online: WalletStatus.ONLINE, network });
+      wallet = this.create({
+        walletId: walletId.toLowerCase(),
+        online: WalletStatus.ONLINE,
+        network,
+      });
       return await this.save(wallet);
     }
 
