@@ -80,6 +80,7 @@ export class OnStartExplodeV4 {
                 type: reward.type,
                 value: reward.value,
                 map,
+                walletId: wallet.id,
               });
               this.socketService.emitEventMapReward(wallet, {
                 block: {

@@ -14,12 +14,14 @@ export class MapRewardRepository extends Repository<MapReward> {
 
   async getAverageRewardByWalletId(walletId: string) {
     if (!walletId) return null;
+    console.log('walletId', walletId);
 
     const lastFarm = await this.findOne({
       where: { walletId },
       order: { createdAt: 'DESC' },
     });
 
+    console.log('lastFarm', lastFarm);
     if (!lastFarm) return null;
 
     const startDate = startOfDay(lastFarm.createdAt);
@@ -54,7 +56,12 @@ export class MapRewardRepository extends Repository<MapReward> {
     ]);
 
     const totalSeconds = totalSecondsResult.totalSeconds || 0;
-    const totalHours = totalSeconds / 3600 < 1 ? 1 : totalSeconds / 3600;
+    const totalHours = totalSeconds / 3600;
+    let divide = totalHours;
+
+    if (totalHours < 1) {
+      divide = totalSeconds / 60;
+    }
 
     return {
       totalHours,
@@ -63,13 +70,13 @@ export class MapRewardRepository extends Repository<MapReward> {
       endDate,
       maps: {
         total: Number(maps.total),
-        average: maps.total / totalHours,
+        average: maps.total / divide,
       },
       tokens: {
         list: tokens,
         average: tokens.map((token) => ({
           type: token.type,
-          value: Number(token.total) / totalHours,
+          value: Number(token.total) / divide,
         })),
       },
     };

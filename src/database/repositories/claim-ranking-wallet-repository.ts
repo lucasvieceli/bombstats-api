@@ -49,7 +49,10 @@ export class ClaimRankingWalletRepository extends Repository<ClaimRankingWallet>
     });
 
     if (wallet) {
-      return wallet.position;
+      return {
+        position: wallet.position,
+        amount: wallet.amount,
+      };
     }
   }
 }

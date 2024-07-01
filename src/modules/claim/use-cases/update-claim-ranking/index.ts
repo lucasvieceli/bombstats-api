@@ -99,7 +99,7 @@ export class UpdateClaimRanking {
       claim.tokenSymbol = transaction.tokenSymbol;
       claim.createdAt = new Date(parseInt(transaction.timeStamp) * 1000);
       claim.network = network;
-      console.log(await this.claimRepository.save(claim));
+      await this.claimRepository.save(claim);
     });
 
     return executePromisesBlock(

@@ -30,8 +30,9 @@ export class ExtensionController {
   @Post()
   async extension(
     @Body()
-    { wallet, network, message, additional }: IBodyExtensionPost,
+    { network, wallet: walletParam, message, additional }: IBodyExtensionPost,
   ) {
+    const wallet = walletParam.toLowerCase();
     if (!Object.values(WalletNetwork).includes(network)) return;
 
     switch (message) {
