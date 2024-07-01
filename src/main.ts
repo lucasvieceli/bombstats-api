@@ -1,8 +1,10 @@
+import { ClaimToken } from '@/database/models/Claim';
+import { WalletNetwork } from '@/database/models/Wallet';
+import { UpdateClaimRanking } from '@/modules/claim/use-cases/update-claim-ranking';
+import { UpdateStakeRanking } from '@/modules/stake/use-cases/update-stake-ranking';
 import { initializeWeb3 } from '@/utils/web3/web3';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { UpdateStakeRanking } from '@/modules/stake/use-cases/update-stake-ranking';
-import { WalletNetwork } from '@/database/models/Wallet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +14,12 @@ async function bootstrap() {
   await app.listen(3000);
 
   const updateStakeRanking = app.get(UpdateStakeRanking);
+  const updateClaimRanking = app.get(UpdateClaimRanking);
+
+  await updateClaimRanking.execute({
+    network: WalletNetwork.POLYGON,
+    token: ClaimToken.BCOIN,
+  });
 
   await updateStakeRanking.execute({ network: WalletNetwork.POLYGON });
   await updateStakeRanking.execute({ network: WalletNetwork.BSC });
@@ -20,6 +28,10 @@ async function bootstrap() {
     async () => {
       await updateStakeRanking.execute({ network: WalletNetwork.POLYGON });
       await updateStakeRanking.execute({ network: WalletNetwork.BSC });
+      await updateClaimRanking.execute({
+        network: WalletNetwork.POLYGON,
+        token: ClaimToken.BCOIN,
+      });
     },
     1000 * 60 * 30,
   );

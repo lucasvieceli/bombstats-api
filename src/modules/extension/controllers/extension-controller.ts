@@ -56,7 +56,6 @@ export class ExtensionController {
     const dataHolder = await this.decodeSmartFox.execute(message);
 
     const ec = dataHolder.get('c').value; // Valor 'GET_SKIN_INVENTORY'
-    console.log('ec', ec);
     const value = dataHolder.get('p').value;
     switch (ec) {
       case 'GET_BLOCK_MAP':

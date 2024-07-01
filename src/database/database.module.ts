@@ -7,6 +7,8 @@ import { MapBlockRepository } from '@/database/repositories/map-block-repository
 import { FarmSessionRepository } from '@/database/repositories/farm-session-repository';
 import { StakeRepository } from '@/database/repositories/stake-repository';
 import { StakeRankingWalletRepository } from '@/database/repositories/stake-ranking-wallet';
+import { ClaimRankingWalletRepository } from '@/database/repositories/claim-ranking-wallet-repository';
+import { ClaimRepository } from '@/database/repositories/claim-repository';
 
 export const DatabaseModuleRoot = TypeOrmModule.forRoot(
   dataSource as TypeOrmModuleOptions,
@@ -21,5 +23,7 @@ export const DatabaseModules = {
     FarmSessionRepository,
     StakeRepository,
     StakeRankingWalletRepository,
+    ClaimRankingWalletRepository,
+    ClaimRepository,
   ],
 };

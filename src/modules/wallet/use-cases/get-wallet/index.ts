@@ -1,4 +1,6 @@
+import { ClaimToken } from '@/database/models/Claim';
 import { WalletNetwork } from '@/database/models/Wallet';
+import { ClaimRankingWalletRepository } from '@/database/repositories/claim-ranking-wallet-repository';
 import { MapRewardRepository } from '@/database/repositories/map-reward-repository';
 import { StakeRankingWalletRepository } from '@/database/repositories/stake-ranking-wallet';
 import { StakeRepository } from '@/database/repositories/stake-repository';
@@ -21,6 +23,7 @@ export class GetWallet {
     private mapRewardRepository: MapRewardRepository,
     private stakeRankingWalletRepository: StakeRankingWalletRepository,
     private stakeRepository: StakeRepository,
+    private claimRankingWalletRepository: ClaimRankingWalletRepository,
   ) {}
   async execute({ wallet, network }: IGetWallet) {
     if (!validateEthereumAddress(wallet)) {
@@ -32,13 +35,18 @@ export class GetWallet {
     });
     const genIds = await getWalletGenIds(wallet, network);
 
-    const [heroes, houses, averageFarm, stakeRanking, stakes] =
+    const [heroes, houses, averageFarm, stakeRanking, stakes, claimRanking] =
       await Promise.all([
         getHeroesFromGenIds(genIds.heroes, network),
         getHousesFromGenIds(genIds.houses),
         this.mapRewardRepository.getAverageRewardByWalletId(walletEntity?.id),
         this.stakeRankingWalletRepository.getPositionRanking(wallet, network),
         this.stakeRepository.getStakesByWallet(wallet, network),
+        this.claimRankingWalletRepository.getPositionRanking(
+          wallet,
+          network,
+          ClaimToken.BCOIN,
+        ),
       ]);
 
     return {
@@ -49,6 +57,7 @@ export class GetWallet {
       wallet: walletEntity,
       averageFarm,
       stakeRanking,
+      claimRanking,
       stakes,
     };
   }
