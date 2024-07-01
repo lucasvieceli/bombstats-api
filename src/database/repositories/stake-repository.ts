@@ -1,6 +1,6 @@
 import { DataSource, Repository } from 'typeorm';
 
-import { Stake } from '@/database/models/stake';
+import { Stake } from '@/database/models/Stake';
 import { Injectable } from '@nestjs/common';
 import { WalletNetwork } from '@/database/models/Wallet';
 import { StakeRankingWallet } from '@/database/models/StakeRankingWallet';
