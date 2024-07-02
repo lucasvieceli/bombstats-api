@@ -4,7 +4,7 @@ import { FarmSession } from '@/database/models/FarmSession';
 import { Map } from '@/database/models/Map';
 import { MapReward } from '@/database/models/MapReward';
 import { Injectable } from '@nestjs/common';
-import { startOfDay } from 'date-fns';
+import { startOfDay, subHours } from 'date-fns';
 
 @Injectable()
 export class MapRewardRepository extends Repository<MapReward> {
@@ -22,8 +22,8 @@ export class MapRewardRepository extends Repository<MapReward> {
 
     if (!lastFarm) return null;
 
-    const startDate = startOfDay(lastFarm.createdAt);
-    const endDate = new Date();
+    const startDate = subHours(new Date(lastFarm.createdAt), 24);
+    const endDate = new Date(lastFarm.createdAt);
 
     const [totalSecondsResult, tokens, maps] = await Promise.all([
       this.dataSource
