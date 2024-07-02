@@ -4,7 +4,7 @@ import { FarmSession } from '@/database/models/FarmSession';
 import { Map } from '@/database/models/Map';
 import { MapReward } from '@/database/models/MapReward';
 import { Injectable } from '@nestjs/common';
-import { startOfDay, subHours } from 'date-fns';
+import { subHours } from 'date-fns';
 
 @Injectable()
 export class MapRewardRepository extends Repository<MapReward> {

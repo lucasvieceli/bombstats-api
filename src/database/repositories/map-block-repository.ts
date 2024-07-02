@@ -27,7 +27,6 @@ export class MapBlockRepository extends Repository<MapBlock> {
         .select('type')
         .addSelect('COUNT(*) as qty')
         .where('walletId = :walletId', { walletId })
-        .where('walletId = :walletId', { walletId })
         .where('hp > 0')
         .groupBy('type')
         .getRawMany(),

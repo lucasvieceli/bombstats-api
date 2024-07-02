@@ -34,12 +34,11 @@ export class OnGetMapBlock {
 
     const map: Map = await this.getMap(walletEntity, additional);
 
-    this.socketService.emitEventMapUpdate(walletEntity);
-
     const data = value.getUtfString('datas_pve_v2');
     const blocks = JSON.parse(data);
 
     await this.createBlocks(walletEntity, map, blocks);
+    await this.socketService.emitEventMapUpdate(walletEntity);
   }
 
   async createBlocks(walletEntity: Wallet, map: Map, blocks: any) {

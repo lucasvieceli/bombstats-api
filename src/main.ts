@@ -16,14 +16,6 @@ async function bootstrap() {
   const updateStakeRanking = app.get(UpdateStakeRanking);
   const updateClaimRanking = app.get(UpdateClaimRanking);
 
-  await updateClaimRanking.execute({
-    network: WalletNetwork.POLYGON,
-    token: ClaimToken.BCOIN,
-  });
-
-  await updateStakeRanking.execute({ network: WalletNetwork.POLYGON });
-  await updateStakeRanking.execute({ network: WalletNetwork.BSC });
-
   setInterval(
     async () => {
       await updateStakeRanking.execute({ network: WalletNetwork.POLYGON });
