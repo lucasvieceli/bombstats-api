@@ -15,13 +15,20 @@ async function bootstrap() {
 
   const updateStakeRanking = app.get(UpdateStakeRanking);
   const updateClaimRanking = app.get(UpdateClaimRanking);
-
+  await updateClaimRanking.execute({
+    network: WalletNetwork.BSC,
+    token: ClaimToken.BCOIN,
+  });
   setInterval(
     async () => {
       await updateStakeRanking.execute({ network: WalletNetwork.POLYGON });
       await updateStakeRanking.execute({ network: WalletNetwork.BSC });
       await updateClaimRanking.execute({
         network: WalletNetwork.POLYGON,
+        token: ClaimToken.BCOIN,
+      });
+      await updateClaimRanking.execute({
+        network: WalletNetwork.BSC,
         token: ClaimToken.BCOIN,
       });
     },
