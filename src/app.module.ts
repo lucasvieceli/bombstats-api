@@ -3,6 +3,7 @@ import {
   DatabaseModules,
 } from '@/database/database.module';
 import { ClaimModules } from '@/modules/claim/claim.module';
+import { CronModules } from '@/modules/cron/cron.module';
 import { ExtensionModules } from '@/modules/extension/extension.module';
 import { StakeModules } from '@/modules/stake/stake.module';
 import { WalletModules } from '@/modules/wallet/wallet.module';
@@ -16,6 +17,7 @@ import { Module } from '@nestjs/common';
     ...WalletModules.imports,
     ...StakeModules.imports,
     ...ClaimModules.imports,
+    ...CronModules.imports,
   ],
   controllers: [
     ...ExtensionModules.controllers,
@@ -29,6 +31,7 @@ import { Module } from '@nestjs/common';
     ...WalletModules.providers,
     ...StakeModules.providers,
     ...ClaimModules.providers,
+    ...CronModules.providers,
     SocketGateway,
     SocketService,
   ],
