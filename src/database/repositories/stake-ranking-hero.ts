@@ -36,7 +36,7 @@ export class StakeRankingHeroRepository extends Repository<StakeRankingHero> {
         position: item.position,
       })),
       amount: result.reduce((acc, item) => acc + item.amount, 0),
-      average: result.reduce((acc, item) => acc + item.amount, 0) / 20,
+      average: result.reduce((acc, item) => acc + item.amount, 0) / totalHeroes,
       totalHeroes,
     };
   }
