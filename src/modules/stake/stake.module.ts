@@ -1,7 +1,9 @@
+import { StakeController } from '@/modules/stake/controllers/stake-controller';
+import { GetTopTwentyRarityHeroes } from '@/modules/stake/use-cases/get-top-twenty-rarity-heroes';
 import { UpdateStakeRanking } from '@/modules/stake/use-cases/update-stake-ranking';
 
 export const StakeModules = {
   imports: [],
-  controllers: [],
-  providers: [UpdateStakeRanking],
+  controllers: [StakeController],
+  providers: [UpdateStakeRanking, GetTopTwentyRarityHeroes],
 };

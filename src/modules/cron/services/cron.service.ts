@@ -10,7 +10,10 @@ export class CronService {
   constructor(
     private updateStakeRanking: UpdateStakeRanking,
     private updateClaimRanking: UpdateClaimRanking,
-  ) {}
+  ) {
+    this.updateStakeRanking.execute({ network: WalletNetwork.POLYGON });
+    this.updateStakeRanking.execute({ network: WalletNetwork.BSC });
+  }
 
   @Cron(CronExpression.EVERY_30_MINUTES)
   async handleCron() {

@@ -74,7 +74,9 @@ export async function getWalletGenIds(wallet: string, network: WalletNetwork) {
     contractRock.methods.getTotalRockByUser(wallet).encodeABI(),
   ];
 
-  const result = await fnContractMult.methods.multiCall(targets, data).call();
+  const result = await fnContractMult.methods
+    .multiCallExcept(targets, data)
+    .call();
 
   return {
     heroes: fnInstance.eth.abi.decodeParameter(

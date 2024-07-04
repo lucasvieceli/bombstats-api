@@ -34,7 +34,7 @@ export async function getMultiCalls({
   const data = params.map((id) => contract.methods[methodName](id).encodeABI());
 
   const result = (await fnContractMult.methods
-    .multiCall(targets, data)
+    .multiCallExcept(targets, data)
     .call()) as any[];
 
   return result.map((r: any) =>

@@ -9,14 +9,14 @@ export let instanceBscWeb3: Web3;
 export function getContractMultiCallPolygon() {
   return new instancePolygonWeb3.eth.Contract(
     ABI_MULTI_CALL,
-    '0x9b7F88d1ae4Ed482cFA8C1928D181E1a29e4b792',
+    '0x7A8F20A0Bf4af6d56FB0Fc1E371987FA41741877',
   );
 }
 
 export function getContractMultiCallBsc() {
   return new instanceBscWeb3.eth.Contract(
     ABI_MULTI_CALL,
-    '0x6b3E00C1A82CB62836BD96c1Ce09815C00EEbffA',
+    '0xb80411Dee1fa1ee98F04FdA761cdDff46e93C7cA',
   );
 }
 

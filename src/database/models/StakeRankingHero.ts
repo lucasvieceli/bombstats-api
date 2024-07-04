@@ -8,13 +8,16 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity('stake')
-export class Stake {
+@Entity('stake_ranking_hero')
+export class StakeRankingHero {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'float', nullable: false })
   amount!: number;
+
+  @Column({ type: 'int', nullable: false })
+  rarity!: number;
 
   @Column({
     type: 'enum',
@@ -24,22 +27,13 @@ export class Stake {
   network!: WalletNetwork;
 
   @Column({ type: 'varchar', nullable: false })
-  heroId!: string;
-
-  @Column({ type: 'varchar', nullable: false })
   wallet!: string;
 
   @Column({ type: 'varchar', nullable: false })
-  currentWallet!: string;
+  heroId!: string;
 
-  @Column({ type: 'int', nullable: true })
-  rarity!: number | null;
-
-  @Column({ type: 'int', nullable: false, default: 0 })
-  withdraw!: number;
-
-  @Column({ type: 'timestamp', nullable: false })
-  date!: Date;
+  @Column({ type: 'integer', nullable: false })
+  position!: number;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt!: Date;

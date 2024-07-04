@@ -4,7 +4,7 @@ export const ABI_MULTI_CALL = [
       { internalType: 'address[]', name: 'targets', type: 'address[]' },
       { internalType: 'bytes[]', name: 'data', type: 'bytes[]' },
     ],
-    name: 'multiCall',
+    name: 'multiCallExcept',
     outputs: [{ internalType: 'bytes[]', name: '', type: 'bytes[]' }],
     stateMutability: 'view',
     type: 'function',

@@ -34,6 +34,7 @@ export interface IHero {
   abilityHeroS: number[];
   maxShield: number;
   stake: number;
+  burned: boolean;
 }
 
 export async function getHeroesFromGenIds(
@@ -92,7 +93,7 @@ export async function getHeroesFromIds(
   const divisor = 10n ** 18n;
 
   const result = (await fnContractMult.methods
-    .multiCall(targets, data)
+    .multiCallExcept(targets, data)
     .call()) as any[];
 
   const heroes = result
@@ -128,7 +129,11 @@ async function getMultiStake(
   return result.map((r: any) => Number(r / divisor));
 }
 
-export async function decodeHero(details: any, stake: number): Promise<IHero> {
+export async function decodeHero(
+  details: any,
+  stake: number,
+  heroId?: any,
+): Promise<IHero> {
   const detailsBigInt = BigInt(details);
 
   const decodeValue = (bitPosition: number, bitSize: number) =>
@@ -138,7 +143,7 @@ export async function decodeHero(details: any, stake: number): Promise<IHero> {
 
   const rarity = decodeRarity(details);
   const result = {
-    id: decodeIdHero(details),
+    id: heroId || decodeIdHero(details),
     index: decodeIndex(details),
     rarity: parseHeroRarity(rarity),
     raritySimbol: parseHeroRaritySimbol(rarity),
@@ -162,6 +167,7 @@ export async function decodeHero(details: any, stake: number): Promise<IHero> {
     abilityHeroS: [] as number[],
     maxShield: SHIELD_LEVEL[rarity + 1][decodeValue(235, 5) + 1],
     stake,
+    burned: details == 0,
   };
 
   const abilityCount = decodeValue(90, 5);
