@@ -1,25 +1,22 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { DecodeSmartFox } from '@/modules/extension/use-cases/decode-smartfox';
-import { GetDashboard } from '@/modules/extension/use-cases/get-dashboard';
 import { OnConnect } from '@/modules/extension/use-cases/on-connect';
 import { OnDisconnect } from '@/modules/extension/use-cases/on-disconnect';
 import { OnGetMapBlock } from '@/modules/extension/use-cases/on-get-block-map';
-import { OnMessageExtension } from '@/modules/extension/use-cases/on-message-extension';
 import { OnStartExplodeV4 } from '@/modules/extension/use-cases/on-start-explode-v4';
 import { OnStartPve } from '@/modules/extension/use-cases/on-start-pve';
 import { OnStopPve } from '@/modules/extension/use-cases/on-stop-pve';
-import { SocketService } from '@/services/websocket';
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-export interface IBodyExtensionPost {
+interface IOnMessageExtension {
   wallet: string;
   network: WalletNetwork;
   message: string;
   additional?: any;
 }
 
-@Controller('extension')
-export class ExtensionController {
+@Injectable()
+export class OnMessageExtension {
   constructor(
     private decodeSmartFox: DecodeSmartFox,
     private onGetMapBlock: OnGetMapBlock,
@@ -28,26 +25,13 @@ export class ExtensionController {
     private onDisconnect: OnDisconnect,
     private onStopPve: OnStopPve,
     private onStartExplodeV4: OnStartExplodeV4,
-    private getDashboard: GetDashboard,
-    private socketService: SocketService,
-    private onMessageExtension: OnMessageExtension,
-  ) {
-    this.socketService.addEventListeners('extension', (params) =>
-      this.onMessageExtension.execute(params),
-    );
-  }
-  @Get('dashboard/:network')
-  async dashboard(@Param('network') network: WalletNetwork) {
-    return await this.getDashboard.execute({
-      network: network.toLowerCase() as WalletNetwork,
-    });
-  }
-
-  @Post()
-  async extension(
-    @Body()
-    { network, wallet: walletParam, message, additional }: IBodyExtensionPost,
-  ) {
+  ) {}
+  async execute({
+    network,
+    wallet: walletParam,
+    message,
+    additional,
+  }: IOnMessageExtension) {
     const wallet = walletParam.toLowerCase();
     if (!Object.values(WalletNetwork).includes(network)) return;
 
@@ -70,16 +54,11 @@ export class ExtensionController {
     }
     if (['Q09OTkVDVEVE', 'Q0xPU0VE'].includes(message)) return;
 
-    const dataHolder = await this.decodeSmartFox.execute(message);
-
-    const ec = dataHolder.get('c').value; // Valor 'GET_SKIN_INVENTORY'
-    const value = dataHolder.get('p').value;
-    switch (ec) {
+    switch (message) {
       case 'GET_BLOCK_MAP':
-        this.onGetMapBlock.execute({
+        this.onGetMapBlock.executeV2({
           wallet,
           network,
-          value,
           additional,
         });
         break;
@@ -96,10 +75,10 @@ export class ExtensionController {
         });
         break;
       case 'START_EXPLODE_V4':
-        this.onStartExplodeV4.execute({
+        this.onStartExplodeV4.executeV2({
           wallet,
           network,
-          value,
+          additional,
         });
         break;
     }

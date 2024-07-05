@@ -1,7 +1,6 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { ABI_BALANCE } from '@/utils/web3/ABI/balance-abi';
 import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
-import { ABI_ROCK } from '@/utils/web3/ABI/rock-abi';
 import {
   getContractMultiCallBsc,
   getContractMultiCallPolygon,
@@ -34,10 +33,6 @@ export async function getWalletGenIds(wallet: string, network: WalletNetwork) {
       network === WalletNetwork.BSC
         ? process.env.CONTRACT_SEN_BSC
         : process.env.CONTRACT_SEN_POLYGON;
-    const contractAddressRock =
-      network === WalletNetwork.BSC
-        ? process.env.CONTRACT_ROCK_BSC
-        : process.env.CONTRACT_ROCK_POLYGON;
 
     const contractHero = new fnInstance.eth.Contract(
       ABI_HERO,
@@ -55,24 +50,18 @@ export async function getWalletGenIds(wallet: string, network: WalletNetwork) {
       ABI_BALANCE,
       contractAddressBomb,
     );
-    const contractRock = new fnInstance.eth.Contract(
-      ABI_ROCK,
-      contractAddressBomb,
-    );
 
     const targets = [
       contractAddressHero,
       contractAddressHouse,
       contractAddressBomb,
       contractAddressSen,
-      contractAddressRock,
     ];
     const data = [
       contractHero.methods.getTokenDetailsByOwner(wallet).encodeABI(),
       contractHouse.methods.getTokenDetailsByOwner(wallet).encodeABI(),
       contractBomb.methods.balanceOf(wallet).encodeABI(),
       contractSen.methods.balanceOf(wallet).encodeABI(),
-      contractRock.methods.getTotalRockByUser(wallet).encodeABI(),
     ];
     const result = await fnContractMult.methods
       .multiCallExcept(targets, data)
@@ -94,7 +83,6 @@ export async function getWalletGenIds(wallet: string, network: WalletNetwork) {
         sen:
           Number(fnInstance.eth.abi.decodeParameter('uint256', result[3])) /
           1e18,
-        rock: Number(fnInstance.eth.abi.decodeParameter('uint256', result[4])),
       },
     };
   } catch (e) {

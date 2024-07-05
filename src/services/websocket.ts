@@ -1,5 +1,6 @@
 import { Wallet, WalletNetwork } from '@/database/models/Wallet';
 import { MapBlockRepository } from '@/database/repositories/map-block-repository';
+import { WalletRepository } from '@/database/repositories/wallet-repository';
 import { Injectable } from '@nestjs/common';
 import {
   OnGatewayConnection,
@@ -23,9 +24,26 @@ interface IEmitEventMapReward {
   };
 }
 
+interface IEmitEventMapUpdate {
+  blocks: {
+    hp: any;
+    i: any;
+    j: any;
+    rewards: {
+      type: number;
+      value: number;
+    }[];
+  }[];
+}
+
 @Injectable()
 export class SocketService {
-  constructor(private mapBlockRepository: MapBlockRepository) {}
+  protected events: [string, any][] = [];
+
+  constructor(
+    private mapBlockRepository: MapBlockRepository,
+    private walletRepository: WalletRepository,
+  ) {}
 
   private readonly connectedClients: Map<
     string,
@@ -43,13 +61,17 @@ export class SocketService {
       this.connectedClients.delete(clientId);
     });
 
-    socket.on('listen-wallet', (params) => {
+    socket.on('listen-wallet', async (params) => {
       const wallets = this.connectedClients.get(clientId)?.wallets || [];
 
       this.connectedClients.set(clientId, {
         socket,
         wallets: [...wallets, params],
       });
+      const wallet = await this.walletRepository.findOne({
+        where: { walletId: params.wallet, network: params.network },
+      });
+      this.emitEventCurrentMap(wallet);
     });
     socket.on('unlisten-listen-wallet', (params) => {
       const wallets = this.connectedClients.get(clientId)?.wallets || [];
@@ -62,6 +84,10 @@ export class SocketService {
             w.network.toUpperCase() !== params.network.toUpperCase(),
         ),
       });
+    });
+
+    this.events.forEach(([name, fn]) => {
+      socket.on(name, fn);
     });
   }
 
@@ -85,12 +111,21 @@ export class SocketService {
     });
   }
 
-  async emitEventMapUpdate(wallet: Wallet) {
+  async emitEventCurrentMap(wallet) {
     const map = await this.mapBlockRepository.getCurrentMap(wallet.id);
-    this.emitEventWallet('map-update', wallet.walletId, wallet.network, {
+    this.emitEventWallet('current-map', wallet.walletId, wallet.network, {
       wallet: wallet.walletId,
       network: wallet.network,
       map,
+    });
+  }
+
+  async emitEventMapUpdate(wallet: Wallet, value: IEmitEventMapUpdate) {
+    // const map = await this.mapBlockRepository.getCurrentMap(wallet.id);
+    this.emitEventWallet('map-update', wallet.walletId, wallet.network, {
+      wallet: wallet.walletId,
+      network: wallet.network,
+      value,
     });
   }
 
@@ -102,6 +137,10 @@ export class SocketService {
       id: randomUUID(),
       ...params,
     });
+  }
+
+  addEventListeners(name: string, fn: any): void {
+    this.events.push([name, fn]);
   }
 }
 

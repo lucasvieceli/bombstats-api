@@ -9,10 +9,7 @@ import { Injectable } from '@nestjs/common';
 interface IOnGetMapBlock {
   wallet: string;
   network: WalletNetwork;
-  value: any;
-  additional: {
-    reset: boolean;
-  };
+  additional: any;
 }
 
 @Injectable()
@@ -23,7 +20,7 @@ export class OnGetMapBlock {
     private mapBlockRepository: MapBlockRepository,
     private socketService: SocketService,
   ) {}
-  async execute({ value, network, additional, wallet }: IOnGetMapBlock) {
+  async execute({ value, network, additional, wallet }: any) {
     const walletEntity = await this.walletRepository.createOrUpdate(
       wallet,
       network,
@@ -38,7 +35,23 @@ export class OnGetMapBlock {
     const blocks = JSON.parse(data);
 
     await this.createBlocks(walletEntity, map, blocks);
-    await this.socketService.emitEventMapUpdate(walletEntity);
+    await this.socketService.emitEventCurrentMap(walletEntity);
+  }
+  async executeV2({ network, additional, wallet }: IOnGetMapBlock) {
+    const walletEntity = await this.walletRepository.createOrUpdate(
+      wallet,
+      network,
+    );
+    if (!walletEntity) {
+      return;
+    }
+
+    const map: Map = await this.getMap(walletEntity, additional);
+
+    const blocks = additional.blocks;
+
+    await this.createBlocks(walletEntity, map, blocks);
+    await this.socketService.emitEventCurrentMap(walletEntity);
   }
 
   async createBlocks(walletEntity: Wallet, map: Map, blocks: any) {

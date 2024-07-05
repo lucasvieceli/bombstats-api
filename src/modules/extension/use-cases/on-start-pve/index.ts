@@ -30,6 +30,6 @@ export class OnStartPve {
       wallet: walletValue,
       startTime: new Date(),
     });
-    this.socketService.emitEventMapUpdate(walletValue);
+    this.socketService.emitEventCurrentMap(walletValue);
   }
 }

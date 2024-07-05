@@ -9,7 +9,7 @@ import { Injectable } from '@nestjs/common';
 interface IOnStartExplodeV4 {
   wallet: string;
   network: WalletNetwork;
-  value: any;
+  additional: any;
 }
 
 @Injectable()
@@ -21,7 +21,7 @@ export class OnStartExplodeV4 {
     private mapRepository: MapRepository,
     private socketService: SocketService,
   ) {}
-  async execute({ wallet, value, network }: IOnStartExplodeV4) {
+  async execute({ wallet, value, network }: any) {
     const walletEntity = await this.walletRepository.createOrUpdate(
       wallet,
       network,
@@ -29,13 +29,26 @@ export class OnStartExplodeV4 {
     if (!walletEntity) {
       return;
     }
+    const blocks = await this.getBlocks(value);
+    await this.executeBlocks(walletEntity, blocks);
+    this.socketService.emitEventMapUpdate(walletEntity, { blocks });
+  }
+  async executeV2({ wallet, additional, network }: IOnStartExplodeV4) {
+    const walletEntity = await this.walletRepository.createOrUpdate(
+      wallet,
+      network,
+    );
+    if (!walletEntity) {
+      return;
+    }
+    const blocks = additional?.blocks;
+    if (!blocks) return;
 
-    await this.executeBlocks(walletEntity, value);
-    this.socketService.emitEventMapUpdate(walletEntity);
+    await this.executeBlocks(walletEntity, blocks);
+    this.socketService.emitEventMapUpdate(walletEntity, { blocks });
   }
 
-  async executeBlocks(wallet: Wallet, value: any) {
-    const map = await this.mapRepository.getLastMap(wallet.id);
+  async getBlocks(value: any) {
     const rawEnemies = value.getSFSArray('blocks');
     const blocks = Array(rawEnemies?.size() || 0)
       .fill(null)
@@ -63,6 +76,12 @@ export class OnStartExplodeV4 {
           rewards,
         };
       });
+
+    return blocks;
+  }
+
+  async executeBlocks(wallet: Wallet, blocks: any) {
+    const map = await this.mapRepository.getLastMap(wallet.id);
 
     await Promise.allSettled(
       blocks.map(async (block) => {

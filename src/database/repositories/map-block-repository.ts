@@ -22,25 +22,11 @@ export class MapBlockRepository extends Repository<MapBlock> {
   }
 
   async getCurrentMap(walletId: string) {
-    const [blocks, overallStats] = await Promise.all([
-      this.createQueryBuilder()
-        .select('type')
-        .addSelect('COUNT(*) as qty')
-        .where('walletId = :walletId', { walletId })
-        .andWhere('hp > 0')
-        .groupBy('type')
-        .getRawMany(),
-      this.createQueryBuilder()
-        .select('SUM(hp) as totalHp')
-        .addSelect('SUM(maxHp) as totalMaxHp')
-        .addSelect(
-          'SUM(CASE WHEN hp > 0 THEN 1 ELSE 0 END) as totalBlocksWithLife',
-        )
-        .addSelect('COUNT(*) as totalBlocks')
-        .where('walletId = :walletId', { walletId })
-        .getRawOne(),
-    ]);
+    const blocks = await this.createQueryBuilder()
+      .select(['type', 'hp', 'i', 'j', 'maxHp'])
+      .where('walletId = :walletId', { walletId })
+      .getRawMany();
 
-    return { blocks, overallStats };
+    return { blocks };
   }
 }
