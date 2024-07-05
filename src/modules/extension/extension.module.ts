@@ -1,5 +1,6 @@
 import { ExtensionController } from '@/modules/extension/controllers/extension-controller';
 import { DecodeSmartFox } from '@/modules/extension/use-cases/decode-smartfox';
+import { GetDashboard } from '@/modules/extension/use-cases/get-dashboard';
 import { OnConnect } from '@/modules/extension/use-cases/on-connect';
 import { OnDisconnect } from '@/modules/extension/use-cases/on-disconnect';
 import { OnGetMapBlock } from '@/modules/extension/use-cases/on-get-block-map';
@@ -18,5 +19,6 @@ export const ExtensionModules = {
     OnDisconnect,
     OnStopPve,
     OnStartExplodeV4,
+    GetDashboard,
   ],
 };

@@ -10,6 +10,7 @@ import { StakeRankingWalletRepository } from '@/database/repositories/stake-rank
 import { ClaimRankingWalletRepository } from '@/database/repositories/claim-ranking-wallet-repository';
 import { ClaimRepository } from '@/database/repositories/claim-repository';
 import { StakeRankingHeroRepository } from '@/database/repositories/stake-ranking-hero';
+import { TotalsRepository } from '@/database/repositories/totals-repository';
 
 export const DatabaseModuleRoot = TypeOrmModule.forRoot(
   dataSource as TypeOrmModuleOptions,
@@ -27,5 +28,6 @@ export const DatabaseModules = {
     StakeRankingHeroRepository,
     ClaimRankingWalletRepository,
     ClaimRepository,
+    TotalsRepository,
   ],
 };

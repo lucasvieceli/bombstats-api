@@ -1,12 +1,13 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { DecodeSmartFox } from '@/modules/extension/use-cases/decode-smartfox';
+import { GetDashboard } from '@/modules/extension/use-cases/get-dashboard';
 import { OnConnect } from '@/modules/extension/use-cases/on-connect';
 import { OnDisconnect } from '@/modules/extension/use-cases/on-disconnect';
 import { OnGetMapBlock } from '@/modules/extension/use-cases/on-get-block-map';
 import { OnStartExplodeV4 } from '@/modules/extension/use-cases/on-start-explode-v4';
 import { OnStartPve } from '@/modules/extension/use-cases/on-start-pve';
 import { OnStopPve } from '@/modules/extension/use-cases/on-stop-pve';
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 
 export interface IBodyExtensionPost {
   wallet: string;
@@ -25,7 +26,15 @@ export class ExtensionController {
     private onDisconnect: OnDisconnect,
     private onStopPve: OnStopPve,
     private onStartExplodeV4: OnStartExplodeV4,
+    private getDashboard: GetDashboard,
   ) {}
+
+  @Get('dashboard/:network')
+  async dashboard(@Param('network') network: WalletNetwork) {
+    return await this.getDashboard.execute({
+      network: network.toLowerCase() as WalletNetwork,
+    });
+  }
 
   @Post()
   async extension(

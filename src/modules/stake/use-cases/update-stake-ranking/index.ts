@@ -2,6 +2,7 @@ import { WalletNetwork } from '@/database/models/Wallet';
 import { StakeRankingHeroRepository } from '@/database/repositories/stake-ranking-hero';
 import { StakeRankingWalletRepository } from '@/database/repositories/stake-ranking-wallet';
 import { StakeRepository } from '@/database/repositories/stake-repository';
+import { TotalsRepository } from '@/database/repositories/totals-repository';
 import { chunkArray, executePromisesBlock } from '@/utils';
 import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
 import { ABI_STAKE } from '@/utils/web3/ABI/stake-abi';
@@ -60,6 +61,7 @@ export class UpdateStakeRanking {
     private stakeRepository: StakeRepository,
     private stakeRankingHeroRepository: StakeRankingHeroRepository,
     private stakeRankingWalletRepository: StakeRankingWalletRepository,
+    private totalsRepository: TotalsRepository,
   ) {}
   async execute({ network }: IUpdateStakeRanking) {
     await this.stakeRepository.delete({ network });
@@ -84,6 +86,9 @@ export class UpdateStakeRanking {
       [...deposited, ...withdraws],
       network,
     );
+
+    const amount = allHeroes.reduce((acc, item) => acc + item.stake, 0);
+
     await Promise.all([
       this.insertRankingWallet(allHeroes, network),
       this.insertRankingRarityHero(allHeroes, network, 0),
@@ -92,6 +97,21 @@ export class UpdateStakeRanking {
       this.insertRankingRarityHero(allHeroes, network, 3),
       this.insertRankingRarityHero(allHeroes, network, 4),
       this.insertRankingRarityHero(allHeroes, network, 5),
+      this.totalsRepository.insertOrUpdate(
+        'stake-amount',
+        amount.toString(),
+        network,
+      ),
+      this.totalsRepository.insertOrUpdate(
+        'stake-heroes',
+        allHeroes.length.toString(),
+        network,
+      ),
+      this.totalsRepository.insertOrUpdate(
+        'stake-average',
+        (amount / allHeroes.length).toString(),
+        network,
+      ),
     ]);
 
     await this.insertDeposit(deposited, network, allHeroes);

@@ -26,4 +26,12 @@ export class WalletRepository extends Repository<Wallet> {
     wallet.online = WalletStatus.ONLINE;
     return await this.save(wallet);
   }
+
+  async getTotalOnline(network: WalletNetwork) {
+    return this.count({ where: { network, online: WalletStatus.ONLINE } });
+  }
+
+  async getTotalInstalled(network: WalletNetwork) {
+    return this.count({ where: { network } });
+  }
 }
