@@ -5,94 +5,102 @@ import { ABI_ROCK } from '@/utils/web3/ABI/rock-abi';
 import {
   getContractMultiCallBsc,
   getContractMultiCallPolygon,
-  instanceBscWeb3,
-  instancePolygonWeb3,
+  getRpcWeb3,
+  isErrorRPC,
 } from '@/utils/web3/web3';
 
 export async function getWalletGenIds(wallet: string, network: WalletNetwork) {
-  const fnInstance =
-    network === WalletNetwork.BSC ? instanceBscWeb3 : instancePolygonWeb3;
-  const fnContractMult =
-    network === WalletNetwork.BSC
-      ? getContractMultiCallBsc()
-      : getContractMultiCallPolygon();
+  try {
+    const fnInstance = getRpcWeb3(network);
 
-  const contractAddressHero =
-    network === WalletNetwork.BSC
-      ? process.env.CONTRACT_HERO_BSC
-      : process.env.CONTRACT_HERO_POLYGON;
-  const contractAddressHouse =
-    network === WalletNetwork.BSC
-      ? process.env.CONTRACT_HOUSE_BSC
-      : process.env.CONTRACT_HOUSE_POLYGON;
-  const contractAddressBomb =
-    network === WalletNetwork.BSC
-      ? process.env.CONTRACT_BOMB_BSC
-      : process.env.CONTRACT_BOMB_POLYGON;
-  const contractAddressSen =
-    network === WalletNetwork.BSC
-      ? process.env.CONTRACT_SEN_BSC
-      : process.env.CONTRACT_SEN_POLYGON;
-  const contractAddressRock =
-    network === WalletNetwork.BSC
-      ? process.env.CONTRACT_ROCK_BSC
-      : process.env.CONTRACT_ROCK_POLYGON;
+    const fnContractMult =
+      network === WalletNetwork.BSC
+        ? getContractMultiCallBsc(fnInstance)
+        : getContractMultiCallPolygon(fnInstance);
 
-  const contractHero = new fnInstance.eth.Contract(
-    ABI_HERO,
-    contractAddressHero,
-  );
-  const contractHouse = new fnInstance.eth.Contract(
-    ABI_HERO,
-    contractAddressHouse,
-  );
-  const contractBomb = new fnInstance.eth.Contract(
-    ABI_BALANCE,
-    contractAddressBomb,
-  );
-  const contractSen = new fnInstance.eth.Contract(
-    ABI_BALANCE,
-    contractAddressBomb,
-  );
-  const contractRock = new fnInstance.eth.Contract(
-    ABI_ROCK,
-    contractAddressBomb,
-  );
+    const contractAddressHero =
+      network === WalletNetwork.BSC
+        ? process.env.CONTRACT_HERO_BSC
+        : process.env.CONTRACT_HERO_POLYGON;
+    const contractAddressHouse =
+      network === WalletNetwork.BSC
+        ? process.env.CONTRACT_HOUSE_BSC
+        : process.env.CONTRACT_HOUSE_POLYGON;
+    const contractAddressBomb =
+      network === WalletNetwork.BSC
+        ? process.env.CONTRACT_BOMB_BSC
+        : process.env.CONTRACT_BOMB_POLYGON;
+    const contractAddressSen =
+      network === WalletNetwork.BSC
+        ? process.env.CONTRACT_SEN_BSC
+        : process.env.CONTRACT_SEN_POLYGON;
+    const contractAddressRock =
+      network === WalletNetwork.BSC
+        ? process.env.CONTRACT_ROCK_BSC
+        : process.env.CONTRACT_ROCK_POLYGON;
 
-  const targets = [
-    contractAddressHero,
-    contractAddressHouse,
-    contractAddressBomb,
-    contractAddressSen,
-    contractAddressRock,
-  ];
-  const data = [
-    contractHero.methods.getTokenDetailsByOwner(wallet).encodeABI(),
-    contractHouse.methods.getTokenDetailsByOwner(wallet).encodeABI(),
-    contractBomb.methods.balanceOf(wallet).encodeABI(),
-    contractSen.methods.balanceOf(wallet).encodeABI(),
-    contractRock.methods.getTotalRockByUser(wallet).encodeABI(),
-  ];
+    const contractHero = new fnInstance.eth.Contract(
+      ABI_HERO,
+      contractAddressHero,
+    );
+    const contractHouse = new fnInstance.eth.Contract(
+      ABI_HERO,
+      contractAddressHouse,
+    );
+    const contractBomb = new fnInstance.eth.Contract(
+      ABI_BALANCE,
+      contractAddressBomb,
+    );
+    const contractSen = new fnInstance.eth.Contract(
+      ABI_BALANCE,
+      contractAddressBomb,
+    );
+    const contractRock = new fnInstance.eth.Contract(
+      ABI_ROCK,
+      contractAddressBomb,
+    );
 
-  const result = await fnContractMult.methods
-    .multiCallExcept(targets, data)
-    .call();
+    const targets = [
+      contractAddressHero,
+      contractAddressHouse,
+      contractAddressBomb,
+      contractAddressSen,
+      contractAddressRock,
+    ];
+    const data = [
+      contractHero.methods.getTokenDetailsByOwner(wallet).encodeABI(),
+      contractHouse.methods.getTokenDetailsByOwner(wallet).encodeABI(),
+      contractBomb.methods.balanceOf(wallet).encodeABI(),
+      contractSen.methods.balanceOf(wallet).encodeABI(),
+      contractRock.methods.getTotalRockByUser(wallet).encodeABI(),
+    ];
+    const result = await fnContractMult.methods
+      .multiCallExcept(targets, data)
+      .call();
 
-  return {
-    heroes: fnInstance.eth.abi.decodeParameter(
-      'uint256[]',
-      result[0],
-    ) as number[],
-    houses: fnInstance.eth.abi.decodeParameter(
-      'uint256[]',
-      result[1],
-    ) as number[],
-    tokens: {
-      bomb:
-        Number(fnInstance.eth.abi.decodeParameter('uint256', result[2])) / 1e18,
-      sen:
-        Number(fnInstance.eth.abi.decodeParameter('uint256', result[3])) / 1e18,
-      rock: Number(fnInstance.eth.abi.decodeParameter('uint256', result[4])),
-    },
-  };
+    return {
+      heroes: fnInstance.eth.abi.decodeParameter(
+        'uint256[]',
+        result[0],
+      ) as number[],
+      houses: fnInstance.eth.abi.decodeParameter(
+        'uint256[]',
+        result[1],
+      ) as number[],
+      tokens: {
+        bomb:
+          Number(fnInstance.eth.abi.decodeParameter('uint256', result[2])) /
+          1e18,
+        sen:
+          Number(fnInstance.eth.abi.decodeParameter('uint256', result[3])) /
+          1e18,
+        rock: Number(fnInstance.eth.abi.decodeParameter('uint256', result[4])),
+      },
+    };
+  } catch (e) {
+    if (isErrorRPC(e)) {
+      return getWalletGenIds(wallet, network);
+    }
+    console.error(e);
+  }
 }

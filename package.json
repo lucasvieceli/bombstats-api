@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && yarn sentry:sourcemaps",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -23,7 +23,8 @@
     "db:migration:generate": "yarn typeorm:cli migration:generate -d ./src/database/data-source.ts",
     "db:migration:run": "yarn typeorm:cli migration:run -d ./src/database/data-source.ts",
     "db:migration:generate:entity": "yarn typeorm-model-generator -h localhost -p 3306 -d bombstats -u root -x your_password -e mysql -o output_directory",
-    "db:migration:revert": "yarn typeorm:cli migration:revert -d ./src/database/data-source.ts"
+    "db:migration:revert": "yarn typeorm:cli migration:revert -d ./src/database/data-source.ts",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org lucas-45 --project node-nestjs ./dist && sentry-cli sourcemaps upload --org lucas-45 --project node-nestjs ./dist"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -33,6 +34,9 @@
     "@nestjs/schedule": "^4.0.2",
     "@nestjs/typeorm": "^10.0.2",
     "@nestjs/websockets": "^10.3.9",
+    "@sentry/cli": "^2.32.1",
+    "@sentry/nestjs": "^8.15.0",
+    "@sentry/profiling-node": "^8.15.0",
     "axios": "^1.7.2",
     "date-fns": "^3.6.0",
     "ethers": "6.9.0",

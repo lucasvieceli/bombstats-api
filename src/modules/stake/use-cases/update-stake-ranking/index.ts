@@ -1,4 +1,6 @@
+import { Hero } from '@/database/models/Hero';
 import { WalletNetwork } from '@/database/models/Wallet';
+import { HeroRepository } from '@/database/repositories/hero-repository';
 import { StakeRankingHeroRepository } from '@/database/repositories/stake-ranking-hero';
 import { StakeRankingWalletRepository } from '@/database/repositories/stake-ranking-wallet';
 import { StakeRepository } from '@/database/repositories/stake-repository';
@@ -10,8 +12,8 @@ import { IHero, decodeHero } from '@/utils/web3/hero';
 import {
   getContractMultiCallBsc,
   getContractMultiCallPolygon,
-  instanceBscWeb3,
-  instancePolygonWeb3,
+  getRpcWeb3,
+  isErrorRPC,
 } from '@/utils/web3/web3';
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
@@ -62,6 +64,7 @@ export class UpdateStakeRanking {
     private stakeRankingHeroRepository: StakeRankingHeroRepository,
     private stakeRankingWalletRepository: StakeRankingWalletRepository,
     private totalsRepository: TotalsRepository,
+    private heroRepository: HeroRepository,
   ) {}
   async execute({ network }: IUpdateStakeRanking) {
     await this.stakeRepository.delete({ network });
@@ -203,82 +206,106 @@ export class UpdateStakeRanking {
   }
 
   async getHeroes(allTransactions: Transaction[], network: WalletNetwork) {
-    const ids = Array.from(new Set(allTransactions.map((item) => item.heroId)));
-
-    const fnInstance =
-      network === WalletNetwork.BSC ? instanceBscWeb3 : instancePolygonWeb3;
-    const fnContractMult =
-      network === WalletNetwork.BSC
-        ? getContractMultiCallBsc()
-        : getContractMultiCallPolygon();
-
-    const contractAddressHero =
-      network === WalletNetwork.BSC
-        ? process.env.CONTRACT_HERO_BSC
-        : process.env.CONTRACT_HERO_POLYGON;
-    const contractAddressStake =
-      network == WalletNetwork.POLYGON
-        ? process.env.CONTRACT_STAKE_POLYGON
-        : process.env.CONTRACT_STAKE_BSC;
-
-    const contractHero = new fnInstance.eth.Contract(
-      ABI_HERO,
-      contractAddressHero,
-    );
-    const contractStake = new fnInstance.eth.Contract(
-      ABI_STAKE,
-      contractAddressStake,
-    );
-
-    const chuncks = chunkArray(ids, 500);
-
-    let resultHeroes = [];
-    for (const ids of chuncks) {
-      const targets = [
-        ...Array(ids.length).fill(contractAddressHero),
-        ...Array(ids.length).fill(contractAddressHero),
-        ...Array(ids.length).fill(contractAddressStake),
-      ];
-
-      const data = [
-        ...ids.map((id) => contractHero.methods.tokenDetails(id).encodeABI()),
-        ...ids.map((id) => contractHero.methods.ownerOf(id).encodeABI()),
-        ...ids.map((id) =>
-          contractStake.methods.getCoinBalancesByHeroId(id).encodeABI(),
-        ),
-      ];
-
-      const result = (await fnContractMult.methods
-        .multiCallExcept(targets, data)
-        .call()) as any[];
-
-      const heroes = result
-        .slice(0, ids.length)
-        .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
-      const wallets = result.slice(ids.length, ids.length * 2).map((r: any) =>
-        r.includes('184552433732313a20696e76616c696420746f6b656e2049440') //error
-          ? null
-          : fnInstance.eth.abi.decodeParameter('address', r),
+    try {
+      const ids = Array.from(
+        new Set(allTransactions.map((item) => item.heroId)),
       );
-      const stakes = result
-        .slice(ids.length * 2)
-        .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
 
-      const divisor = 10n ** 18n;
+      const fnInstance = getRpcWeb3(network);
+      const fnContractMult =
+        network === WalletNetwork.BSC
+          ? getContractMultiCallBsc(fnInstance)
+          : getContractMultiCallPolygon(fnInstance);
 
-      resultHeroes = [
-        ...resultHeroes,
-        ...(await Promise.all(
+      const contractAddressHero =
+        network === WalletNetwork.BSC
+          ? process.env.CONTRACT_HERO_BSC
+          : process.env.CONTRACT_HERO_POLYGON;
+      const contractAddressStake =
+        network == WalletNetwork.POLYGON
+          ? process.env.CONTRACT_STAKE_POLYGON
+          : process.env.CONTRACT_STAKE_BSC;
+
+      const contractHero = new fnInstance.eth.Contract(
+        ABI_HERO,
+        contractAddressHero,
+      );
+      const contractStake = new fnInstance.eth.Contract(
+        ABI_STAKE,
+        contractAddressStake,
+      );
+
+      const chuncks = chunkArray(ids, 300);
+
+      let resultHeroes = [];
+      for (const ids of chuncks) {
+        const targets = [
+          ...Array(ids.length).fill(contractAddressHero),
+          ...Array(ids.length).fill(contractAddressHero),
+          ...Array(ids.length).fill(contractAddressStake),
+        ];
+
+        const data = [
+          ...ids.map((id) => contractHero.methods.tokenDetails(id).encodeABI()),
+          ...ids.map((id) => contractHero.methods.ownerOf(id).encodeABI()),
+          ...ids.map((id) =>
+            contractStake.methods.getCoinBalancesByHeroId(id).encodeABI(),
+          ),
+        ];
+
+        const result = (await fnContractMult.methods
+          .multiCallExcept(targets, data)
+          .call()) as any[];
+
+        const heroes = result
+          .slice(0, ids.length)
+          .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
+        const wallets = result
+          .slice(ids.length, ids.length * 2)
+          .map((r: any) =>
+            r.includes('184552433732313a20696e76616c696420746f6b656e2049440') //error
+              ? null
+              : fnInstance.eth.abi.decodeParameter('address', r),
+          );
+        const stakes = result
+          .slice(ids.length * 2)
+          .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
+
+        const divisor = 10n ** 18n;
+
+        const newHeroes = await Promise.all(
           heroes.map(async (item, index) => ({
-            hero: await decodeHero(item, 0, ids[index]),
+            hero: await decodeHero(
+              item,
+              Number((stakes[index] as any) / divisor),
+              ids[index],
+            ),
             owner: wallets[index],
             stake: Number((stakes[index] as any) / divisor),
           })),
-        )),
-      ];
-    }
+        );
 
-    return resultHeroes;
+        await Promise.all(
+          newHeroes.map(async (hero) => {
+            await this.heroRepository.updateOrInsert(
+              {
+                ...hero.hero,
+                wallet: hero.owner,
+              } as unknown as Hero,
+              network,
+            );
+          }),
+        );
+
+        resultHeroes = [...resultHeroes, ...newHeroes];
+      }
+      return resultHeroes;
+    } catch (e) {
+      if (isErrorRPC(e)) {
+        return this.getHeroes(allTransactions, network);
+      }
+      throw e;
+    }
   }
 
   async withdrawStake(

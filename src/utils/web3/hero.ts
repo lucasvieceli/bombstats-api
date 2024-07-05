@@ -5,8 +5,8 @@ import { getMultiCalls } from '@/utils/web3/multi-calls';
 import {
   getContractMultiCallBsc,
   getContractMultiCallPolygon,
-  instanceBscWeb3,
-  instancePolygonWeb3,
+  getRpcWeb3,
+  isErrorRPC,
 } from '@/utils/web3/web3';
 
 export interface IHero {
@@ -35,6 +35,8 @@ export interface IHero {
   maxShield: number;
   stake: number;
   burned: boolean;
+  genId: number;
+  wallet?: string;
 }
 
 export async function getHeroesFromGenIds(
@@ -46,7 +48,7 @@ export async function getHeroesFromGenIds(
   const stakes = await getMultiStake(heroIds, network);
 
   return Promise.all(
-    heroIds.map((id, index) => decodeHero(genIds[index], stakes[index])),
+    heroIds.map((id, index) => decodeHero(genIds[index], stakes[index], id)),
   );
 }
 
@@ -54,59 +56,65 @@ export async function getHeroesFromIds(
   ids: number[] | string[],
   network: WalletNetwork,
 ) {
-  const fnInstance =
-    network === WalletNetwork.BSC ? instanceBscWeb3 : instancePolygonWeb3;
-  const fnContractMult =
-    network === WalletNetwork.BSC
-      ? getContractMultiCallBsc()
-      : getContractMultiCallPolygon();
+  try {
+    const fnInstance = getRpcWeb3(network);
+    const fnContractMult =
+      network === WalletNetwork.BSC
+        ? getContractMultiCallBsc(fnInstance)
+        : getContractMultiCallPolygon(fnInstance);
 
-  const contractAddressHero =
-    network === WalletNetwork.BSC
-      ? process.env.CONTRACT_HERO_BSC
-      : process.env.CONTRACT_HERO_POLYGON;
-  const contractAddressStake =
-    network == WalletNetwork.POLYGON
-      ? process.env.CONTRACT_STAKE_POLYGON
-      : process.env.CONTRACT_STAKE_BSC;
+    const contractAddressHero =
+      network === WalletNetwork.BSC
+        ? process.env.CONTRACT_HERO_BSC
+        : process.env.CONTRACT_HERO_POLYGON;
+    const contractAddressStake =
+      network == WalletNetwork.POLYGON
+        ? process.env.CONTRACT_STAKE_POLYGON
+        : process.env.CONTRACT_STAKE_BSC;
 
-  const contractHero = new fnInstance.eth.Contract(
-    ABI_HERO,
-    contractAddressHero,
-  );
-  const contractStake = new fnInstance.eth.Contract(
-    ABI_STAKE,
-    contractAddressStake,
-  );
+    const contractHero = new fnInstance.eth.Contract(
+      ABI_HERO,
+      contractAddressHero,
+    );
+    const contractStake = new fnInstance.eth.Contract(
+      ABI_STAKE,
+      contractAddressStake,
+    );
 
-  const targets = [
-    ...Array(ids.length).fill(contractAddressHero),
-    ...Array(ids.length).fill(contractAddressStake),
-  ];
+    const targets = [
+      ...Array(ids.length).fill(contractAddressHero),
+      ...Array(ids.length).fill(contractAddressStake),
+    ];
 
-  const data = [
-    ...ids.map((id) => contractHero.methods.tokenDetails(id).encodeABI()),
-    ...ids.map((id) =>
-      contractStake.methods.getCoinBalancesByHeroId(id).encodeABI(),
-    ),
-  ];
-  const divisor = 10n ** 18n;
+    const data = [
+      ...ids.map((id) => contractHero.methods.tokenDetails(id).encodeABI()),
+      ...ids.map((id) =>
+        contractStake.methods.getCoinBalancesByHeroId(id).encodeABI(),
+      ),
+    ];
+    const divisor = 10n ** 18n;
 
-  const result = (await fnContractMult.methods
-    .multiCallExcept(targets, data)
-    .call()) as any[];
+    const result = (await fnContractMult.methods
+      .multiCallExcept(targets, data)
+      .call()) as any[];
 
-  const heroes = result
-    .slice(0, ids.length)
-    .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
-  const stakes = result
-    .slice(ids.length)
-    .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
-  return Promise.all(
-    heroes.map((h: any, index: number) =>
-      decodeHero(h, Number(stakes[index]) / Number(divisor)),
-    ),
-  );
+    const heroes = result
+      .slice(0, ids.length)
+      .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
+    const stakes = result
+      .slice(ids.length)
+      .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
+    return Promise.all(
+      heroes.map((h: any, index: number) =>
+        decodeHero(h, Number(stakes[index]) / Number(divisor)),
+      ),
+    );
+  } catch (e) {
+    if (isErrorRPC(e)) {
+      return getHeroesFromIds(ids, network);
+    }
+    throw e;
+  }
 }
 
 async function getMultiStake(
@@ -168,6 +176,7 @@ export async function decodeHero(
     maxShield: SHIELD_LEVEL[rarity + 1][decodeValue(235, 5) + 1],
     stake,
     burned: details == 0,
+    genId: details.toString(),
   };
 
   const abilityCount = decodeValue(90, 5);

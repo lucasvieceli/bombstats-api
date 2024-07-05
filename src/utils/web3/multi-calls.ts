@@ -2,8 +2,8 @@ import { WalletNetwork } from '@/database/models/Wallet';
 import {
   getContractMultiCallBsc,
   getContractMultiCallPolygon,
-  instanceBscWeb3,
-  instancePolygonWeb3,
+  getRpcWeb3,
+  isErrorRPC,
 } from '@/utils/web3/web3';
 
 interface IGetMultiCalls {
@@ -21,23 +21,37 @@ export async function getMultiCalls({
   params,
   methodName,
 }: IGetMultiCalls) {
-  const fnInstance =
-    network === WalletNetwork.BSC ? instanceBscWeb3 : instancePolygonWeb3;
-  const fnContractMult =
-    network === WalletNetwork.BSC
-      ? getContractMultiCallBsc()
-      : getContractMultiCallPolygon();
+  try {
+    const fnInstance = getRpcWeb3(network);
+    const fnContractMult =
+      network === WalletNetwork.BSC
+        ? getContractMultiCallBsc(fnInstance)
+        : getContractMultiCallPolygon(fnInstance);
 
-  const contract = new fnInstance.eth.Contract(abi, contractAddress);
+    const contract = new fnInstance.eth.Contract(abi, contractAddress);
 
-  const targets = Array(params.length).fill(contractAddress);
-  const data = params.map((id) => contract.methods[methodName](id).encodeABI());
+    const targets = Array(params.length).fill(contractAddress);
+    const data = params.map((id) =>
+      contract.methods[methodName](id).encodeABI(),
+    );
 
-  const result = (await fnContractMult.methods
-    .multiCallExcept(targets, data)
-    .call()) as any[];
+    const result = (await fnContractMult.methods
+      .multiCallExcept(targets, data)
+      .call()) as any[];
 
-  return result.map((r: any) =>
-    fnInstance.eth.abi.decodeParameter('uint256', r),
-  );
+    return result.map((r: any) =>
+      fnInstance.eth.abi.decodeParameter('uint256', r),
+    );
+  } catch (error) {
+    if (isErrorRPC(error)) {
+      return getMultiCalls({
+        contractAddress,
+        abi,
+        network,
+        params,
+        methodName,
+      });
+    }
+    throw error;
+  }
 }
