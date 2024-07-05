@@ -12,9 +12,7 @@ export class CronService {
     private updateStakeRanking: UpdateStakeRanking,
     private updateClaimRanking: UpdateClaimRanking,
     private updatePriceTokens: UpdatePriceTokens,
-  ) {
-    this.updateStakeRanking.execute({ network: WalletNetwork.POLYGON });
-  }
+  ) {}
 
   @Cron(CronExpression.EVERY_HOUR)
   async handleCron() {
