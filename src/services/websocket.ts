@@ -69,7 +69,10 @@ export class SocketService {
         wallets: [...wallets, params],
       });
       const wallet = await this.walletRepository.findOne({
-        where: { walletId: params.wallet, network: params.network },
+        where: {
+          walletId: params.wallet?.toLowerCase(),
+          network: params.network?.toUpperCase(),
+        },
       });
       if (wallet) {
         this.emitEventCurrentMap(wallet);

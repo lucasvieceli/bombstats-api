@@ -32,7 +32,7 @@ export class GetWallet {
     }
 
     const walletEntity = await this.walletRepository.findOne({
-      where: { walletId: wallet, network },
+      where: { walletId: wallet.toLowerCase(), network },
     });
     const genIds = await getWalletGenIds(wallet, network);
 
