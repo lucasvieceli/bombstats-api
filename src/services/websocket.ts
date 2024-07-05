@@ -71,7 +71,9 @@ export class SocketService {
       const wallet = await this.walletRepository.findOne({
         where: { walletId: params.wallet, network: params.network },
       });
-      this.emitEventCurrentMap(wallet);
+      if (wallet) {
+        this.emitEventCurrentMap(wallet);
+      }
     });
     socket.on('unlisten-listen-wallet', (params) => {
       const wallets = this.connectedClients.get(clientId)?.wallets || [];
@@ -111,7 +113,7 @@ export class SocketService {
     });
   }
 
-  async emitEventCurrentMap(wallet) {
+  async emitEventCurrentMap(wallet: Wallet) {
     const map = await this.mapBlockRepository.getCurrentMap(wallet.id);
     this.emitEventWallet('current-map', wallet.walletId, wallet.network, {
       wallet: wallet.walletId,
