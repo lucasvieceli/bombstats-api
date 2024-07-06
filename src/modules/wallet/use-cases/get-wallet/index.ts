@@ -36,6 +36,13 @@ export class GetWallet {
     });
     const genIds = await getWalletGenIds(wallet, network);
 
+    if (
+      wallet.toLowerCase() ==
+      '0xFE356c63D90BEA7800328283821d3BeD81760925'.toLowerCase()
+    ) {
+      console.log('genIds', genIds);
+    }
+
     const [heroes, houses, averageFarm, stakeRanking, stakes, claimRanking] =
       await Promise.all([
         this.heroRepository.getHeroesFromGenId(genIds.heroes, network, wallet),
