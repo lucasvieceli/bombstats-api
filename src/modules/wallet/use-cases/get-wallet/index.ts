@@ -47,7 +47,10 @@ export class GetWallet {
       await Promise.all([
         this.heroRepository.getHeroesFromGenId(genIds.heroes, network, wallet),
         getHousesFromGenIds(genIds.houses),
-        this.mapRewardRepository.getAverageRewardByWalletId(walletEntity?.id),
+        new Promise((resolve) => {
+          resolve(null);
+        }),
+        // this.mapRewardRepository.getAverageRewardByWalletId(walletEntity?.id),
         this.stakeRankingWalletRepository.getPositionRanking(wallet, network),
         this.stakeRepository.getStakesByWallet(wallet, network),
         this.claimRankingWalletRepository.getPositionRanking(
