@@ -74,6 +74,13 @@ export class SocketService {
           network: params.network?.toUpperCase(),
         },
       });
+
+      if (
+        params.wallet.toLowerCase() ==
+        '0x5aae945cd56ee21ea3f63b6772fcd5e71713c2ee'.toLowerCase()
+      ) {
+        console.log('walletakiiii', wallet);
+      }
       if (wallet) {
         this.emitEventCurrentMap(wallet);
       }
