@@ -17,10 +17,7 @@ export class OnStartPve {
     private socketService: SocketService,
   ) {}
   async execute({ wallet, network }: IOnStartPve) {
-    const walletValue = await this.walletRepository.createOrUpdate(
-      wallet,
-      network,
-    );
+    const walletValue = await this.walletRepository.getWallet(wallet, network);
 
     if (!walletValue) {
       return;

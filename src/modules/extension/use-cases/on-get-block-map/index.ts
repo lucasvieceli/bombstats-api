@@ -1,4 +1,3 @@
-import { Map } from '@/database/models/Map';
 import { Wallet, WalletNetwork } from '@/database/models/Wallet';
 import { MapBlockRepository } from '@/database/repositories/map-block-repository';
 import { MapRepository } from '@/database/repositories/map-repository';
@@ -20,47 +19,26 @@ export class OnGetMapBlock {
     private mapBlockRepository: MapBlockRepository,
     private socketService: SocketService,
   ) {}
-  async execute({ value, network, additional, wallet }: any) {
-    const walletEntity = await this.walletRepository.createOrUpdate(
-      wallet,
-      network,
-    );
-    if (!walletEntity) {
-      return;
-    }
 
-    const map: Map = await this.getMap(walletEntity, additional);
-
-    const data = value.getUtfString('datas_pve_v2');
-    const blocks = JSON.parse(data);
-
-    await this.createBlocks(walletEntity, map, blocks);
-    await this.socketService.emitEventCurrentMap(walletEntity);
-  }
   async executeV2({ network, additional, wallet }: IOnGetMapBlock) {
-    const walletEntity = await this.walletRepository.createOrUpdate(
-      wallet,
-      network,
-    );
+    const walletEntity = await this.walletRepository.getWallet(wallet, network);
     if (!walletEntity) {
       return;
     }
 
-    const map: Map = await this.getMap(walletEntity, additional);
+    await this.createMap(walletEntity, additional);
 
     const blocks = additional.blocks;
 
-    await this.createBlocks(walletEntity, map, blocks);
+    await this.createBlocks(walletEntity, blocks);
     await this.socketService.emitEventCurrentMap(walletEntity);
   }
 
-  async createBlocks(walletEntity: Wallet, map: Map, blocks: any) {
+  async createBlocks(walletEntity: Wallet, blocks: any) {
     await this.mapBlockRepository.deleteFromWalletId(walletEntity.id);
     return Promise.all(
       blocks.map(async (block: any) => {
         this.mapBlockRepository.save({
-          map,
-          mapId: map.id,
           wallet: walletEntity,
           type: block.type,
           i: block.i,
@@ -72,7 +50,10 @@ export class OnGetMapBlock {
     );
   }
 
-  async getMap(walletEntity: Wallet, additional: IOnGetMapBlock['additional']) {
+  async createMap(
+    walletEntity: Wallet,
+    additional: IOnGetMapBlock['additional'],
+  ) {
     if (additional.reset) {
       this.socketService.emitEventMapReward(walletEntity, {
         resetMap: true,
@@ -81,7 +62,5 @@ export class OnGetMapBlock {
         wallet: walletEntity,
       });
     }
-
-    return await this.mapRepository.getLastMap(walletEntity.id);
   }
 }

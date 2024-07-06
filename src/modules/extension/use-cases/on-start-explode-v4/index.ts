@@ -34,18 +34,15 @@ export class OnStartExplodeV4 {
     this.socketService.emitEventMapUpdate(walletEntity, { blocks });
   }
   async executeV2({ wallet, additional, network }: IOnStartExplodeV4) {
-    const walletEntity = await this.walletRepository.createOrUpdate(
-      wallet,
-      network,
-    );
+    const walletEntity = await this.walletRepository.getWallet(wallet, network);
     if (!walletEntity) {
       return;
     }
     const blocks = additional?.blocks;
     if (!blocks) return;
+    this.socketService.emitEventMapUpdate(walletEntity, { blocks });
 
     await this.executeBlocks(walletEntity, blocks);
-    this.socketService.emitEventMapUpdate(walletEntity, { blocks });
   }
 
   async getBlocks(value: any) {
@@ -81,7 +78,11 @@ export class OnStartExplodeV4 {
   }
 
   async executeBlocks(wallet: Wallet, blocks: any) {
-    const map = await this.mapRepository.getLastMap(wallet.id);
+    let map = null;
+    //check has one of blocks rewards
+    if (blocks.some((block) => block.rewards.length > 0)) {
+      map = await this.mapRepository.getLastMap(wallet.id);
+    }
 
     await Promise.allSettled(
       blocks.map(async (block) => {
@@ -94,18 +95,18 @@ export class OnStartExplodeV4 {
         if (block?.rewards?.length) {
           await Promise.all(
             block.rewards.map(async (reward) => {
+              this.socketService.emitEventMapReward(wallet, {
+                block: {
+                  type: reward.type,
+                  value: reward.value,
+                },
+              });
               await this.mapRewardRepository.save({
                 wallet,
                 type: reward.type,
                 value: reward.value,
                 map,
                 walletId: wallet.id,
-              });
-              this.socketService.emitEventMapReward(wallet, {
-                block: {
-                  type: reward.type,
-                  value: reward.value,
-                },
               });
             }),
           );

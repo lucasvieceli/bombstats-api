@@ -1,5 +1,4 @@
 import { WalletNetwork } from '@/database/models/Wallet';
-import { DecodeSmartFox } from '@/modules/extension/use-cases/decode-smartfox';
 import { OnConnect } from '@/modules/extension/use-cases/on-connect';
 import { OnDisconnect } from '@/modules/extension/use-cases/on-disconnect';
 import { OnGetMapBlock } from '@/modules/extension/use-cases/on-get-block-map';
@@ -18,7 +17,6 @@ interface IOnMessageExtension {
 @Injectable()
 export class OnMessageExtension {
   constructor(
-    private decodeSmartFox: DecodeSmartFox,
     private onGetMapBlock: OnGetMapBlock,
     private onStartPve: OnStartPve,
     private onConnect: OnConnect,
@@ -51,10 +49,7 @@ export class OnMessageExtension {
           network,
         });
         break;
-    }
-    if (['Q09OTkVDVEVE', 'Q0xPU0VE'].includes(message)) return;
 
-    switch (message) {
       case 'GET_BLOCK_MAP':
         this.onGetMapBlock.executeV2({
           wallet,

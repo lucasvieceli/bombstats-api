@@ -15,10 +15,7 @@ export class OnStopPve {
     private walletRepository: WalletRepository,
   ) {}
   async execute({ wallet, network }: IOnStopPve) {
-    const walletValue = await this.walletRepository.createOrUpdate(
-      wallet,
-      network,
-    );
+    const walletValue = await this.walletRepository.getWallet(wallet, network);
 
     if (!walletValue) {
       return;

@@ -1,15 +1,8 @@
 import { WalletNetwork } from '@/database/models/Wallet';
-import { DecodeSmartFox } from '@/modules/extension/use-cases/decode-smartfox';
 import { GetDashboard } from '@/modules/extension/use-cases/get-dashboard';
-import { OnConnect } from '@/modules/extension/use-cases/on-connect';
-import { OnDisconnect } from '@/modules/extension/use-cases/on-disconnect';
-import { OnGetMapBlock } from '@/modules/extension/use-cases/on-get-block-map';
 import { OnMessageExtension } from '@/modules/extension/use-cases/on-message-extension';
-import { OnStartExplodeV4 } from '@/modules/extension/use-cases/on-start-explode-v4';
-import { OnStartPve } from '@/modules/extension/use-cases/on-start-pve';
-import { OnStopPve } from '@/modules/extension/use-cases/on-stop-pve';
 import { SocketService } from '@/services/websocket';
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 
 export interface IBodyExtensionPost {
   wallet: string;
@@ -21,13 +14,6 @@ export interface IBodyExtensionPost {
 @Controller('extension')
 export class ExtensionController {
   constructor(
-    private decodeSmartFox: DecodeSmartFox,
-    private onGetMapBlock: OnGetMapBlock,
-    private onStartPve: OnStartPve,
-    private onConnect: OnConnect,
-    private onDisconnect: OnDisconnect,
-    private onStopPve: OnStopPve,
-    private onStartExplodeV4: OnStartExplodeV4,
     private getDashboard: GetDashboard,
     private socketService: SocketService,
     private onMessageExtension: OnMessageExtension,

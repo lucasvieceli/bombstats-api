@@ -9,6 +9,12 @@ export class WalletRepository extends Repository<Wallet> {
     super(Wallet, dataSource.createEntityManager());
   }
 
+  async getWallet(walletId: string, network: WalletNetwork) {
+    return this.findOne({
+      where: { walletId: walletId.toLowerCase(), network },
+    });
+  }
+
   async createOrUpdate(walletId: string, network: WalletNetwork) {
     let wallet = await this.findOne({
       where: { walletId: walletId.toLowerCase(), network },
