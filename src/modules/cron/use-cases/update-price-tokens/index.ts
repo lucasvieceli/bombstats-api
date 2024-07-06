@@ -49,7 +49,7 @@ export class UpdatePriceTokens {
   async updateTokens() {
     const tokens = await this.getPriceToken();
 
-    if (!tokens.length) return;
+    if (!tokens?.length) return;
 
     await this.insertToken(
       'bombcrypto-coin',
