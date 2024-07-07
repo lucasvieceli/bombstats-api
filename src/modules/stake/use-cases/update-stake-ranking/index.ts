@@ -6,17 +6,10 @@ import { StakeRankingWalletRepository } from '@/database/repositories/stake-rank
 import { StakeRepository } from '@/database/repositories/stake-repository';
 import { TotalsRepository } from '@/database/repositories/totals-repository';
 import { chunkArray, executePromisesBlock } from '@/utils';
-import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
-import { ABI_STAKE } from '@/utils/web3/ABI/stake-abi';
-import { IHero, decodeHero } from '@/utils/web3/hero';
-import {
-  getContractMultiCallBsc,
-  getContractMultiCallPolygon,
-  getRpcWeb3,
-  isErrorRPC,
-} from '@/utils/web3/web3';
+import { IHero, getHeroesWithStakeOwnerFromIds } from '@/utils/web3/hero';
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { In } from 'typeorm';
 
 interface Transaction {
   blockNumber: string;
@@ -67,14 +60,22 @@ export class UpdateStakeRanking {
     private heroRepository: HeroRepository,
   ) {}
   async execute({ network }: IUpdateStakeRanking) {
-    await this.stakeRepository.delete({ network });
+    // await this.stakeRepository.delete({ network });
     let transactions;
+    const defaultBlock = 0;
+    const lastBlockNumber =
+      (
+        await this.stakeRepository.findOne({
+          where: { network },
+          order: { blockNumber: 'DESC' },
+        })
+      )?.blockNumber ?? defaultBlock;
 
     console.log('buscando');
     if (network == WalletNetwork.BSC) {
-      transactions = await this.getTransactionsBSC();
+      transactions = await this.getTransactionsBSC(lastBlockNumber);
     } else {
-      transactions = await this.getTransactionsPolygon();
+      transactions = await this.getTransactionsPolygon(lastBlockNumber);
     }
     console.log('transactions', transactions.length);
     const deposited = transactions
@@ -85,11 +86,18 @@ export class UpdateStakeRanking {
       .filter((transaction) => transaction.functionName == WITHDRAW_METHOD)
       .map(this.parseHeroAndStake);
 
-    const allHeroes = await this.getHeroes(
+    const newHeroes = await this.getHeroes(
       [...deposited, ...withdraws],
       network,
     );
+    console.log('newHeroes', newHeroes.length);
 
+    await this.insertDeposit(deposited, network, newHeroes);
+
+    await this.withdrawStake(withdraws, network, newHeroes);
+
+    const allHeroes = await this.updateHeroes(network);
+    console.log('allHeroes', allHeroes.length);
     const amount = allHeroes.reduce((acc, item) => acc + item.stake, 0);
 
     await Promise.all([
@@ -116,10 +124,6 @@ export class UpdateStakeRanking {
         network,
       ),
     ]);
-
-    await this.insertDeposit(deposited, network, allHeroes);
-
-    await this.withdrawStake(withdraws, network, allHeroes);
 
     console.log(`Terminou UpdateStakeRanking ${network}`);
   }
@@ -206,106 +210,32 @@ export class UpdateStakeRanking {
   }
 
   async getHeroes(allTransactions: Transaction[], network: WalletNetwork) {
-    try {
-      const ids = Array.from(
-        new Set(allTransactions.map((item) => item.heroId)),
+    const ids = Array.from(new Set(allTransactions.map((item) => item.heroId)));
+
+    return await getHeroesWithStakeOwnerFromIds(ids, network);
+  }
+
+  async updateHeroes(network: WalletNetwork) {
+    const heroIds = await this.stakeRepository.getHeroes(network);
+
+    const heroes = await getHeroesWithStakeOwnerFromIds(
+      heroIds.map((h) => h.heroId),
+      network,
+    );
+
+    const promises = heroes.map((hero) => async () => {
+      await this.heroRepository.updateOrInsert(
+        {
+          ...hero.hero,
+          wallet: hero.owner,
+        } as unknown as Hero,
+        network,
       );
+    });
 
-      const fnInstance = getRpcWeb3(network);
-      const fnContractMult =
-        network === WalletNetwork.BSC
-          ? getContractMultiCallBsc(fnInstance)
-          : getContractMultiCallPolygon(fnInstance);
+    await executePromisesBlock(promises, 1000, 'all', 0, 'updateHeroes');
 
-      const contractAddressHero =
-        network === WalletNetwork.BSC
-          ? process.env.CONTRACT_HERO_BSC
-          : process.env.CONTRACT_HERO_POLYGON;
-      const contractAddressStake =
-        network == WalletNetwork.POLYGON
-          ? process.env.CONTRACT_STAKE_POLYGON
-          : process.env.CONTRACT_STAKE_BSC;
-
-      const contractHero = new fnInstance.eth.Contract(
-        ABI_HERO,
-        contractAddressHero,
-      );
-      const contractStake = new fnInstance.eth.Contract(
-        ABI_STAKE,
-        contractAddressStake,
-      );
-
-      const chuncks = chunkArray(ids, 300);
-
-      let resultHeroes = [];
-      for (const ids of chuncks) {
-        const targets = [
-          ...Array(ids.length).fill(contractAddressHero),
-          ...Array(ids.length).fill(contractAddressHero),
-          ...Array(ids.length).fill(contractAddressStake),
-        ];
-
-        const data = [
-          ...ids.map((id) => contractHero.methods.tokenDetails(id).encodeABI()),
-          ...ids.map((id) => contractHero.methods.ownerOf(id).encodeABI()),
-          ...ids.map((id) =>
-            contractStake.methods.getCoinBalancesByHeroId(id).encodeABI(),
-          ),
-        ];
-
-        const result = (await fnContractMult.methods
-          .multiCallExcept(targets, data)
-          .call()) as any[];
-
-        const heroes = result
-          .slice(0, ids.length)
-          .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
-        const wallets = result
-          .slice(ids.length, ids.length * 2)
-          .map((r: any) =>
-            r.includes('184552433732313a20696e76616c696420746f6b656e2049440') //error
-              ? null
-              : fnInstance.eth.abi.decodeParameter('address', r),
-          );
-        const stakes = result
-          .slice(ids.length * 2)
-          .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
-
-        const divisor = 10n ** 18n;
-
-        const newHeroes = await Promise.all(
-          heroes.map(async (item, index) => ({
-            hero: await decodeHero(
-              item,
-              Number((stakes[index] as any) / divisor),
-              ids[index],
-            ),
-            owner: wallets[index],
-            stake: Number((stakes[index] as any) / divisor),
-          })),
-        );
-
-        await Promise.all(
-          newHeroes.map(async (hero) => {
-            await this.heroRepository.updateOrInsert(
-              {
-                ...hero.hero,
-                wallet: hero.owner,
-              } as unknown as Hero,
-              network,
-            );
-          }),
-        );
-
-        resultHeroes = [...resultHeroes, ...newHeroes];
-      }
-      return resultHeroes;
-    } catch (e) {
-      if (isErrorRPC(e)) {
-        return this.getHeroes(allTransactions, network);
-      }
-      throw e;
-    }
+    return heroes;
   }
 
   async withdrawStake(
@@ -315,27 +245,48 @@ export class UpdateStakeRanking {
   ) {
     const promisesSearchHero = chunkArray<Transaction>(transactions, 1000).map(
       (chunk) => async () => {
-        await Promise.all(
-          chunk.map(async (transaction) => {
+        const transactionHashes = chunk.map((transaction) => transaction.hash);
+
+        const existingTransactions = await this.stakeRepository.find({
+          where: {
+            hash: In(transactionHashes),
+          },
+          select: ['hash'],
+        });
+
+        const existingHashes = new Set(
+          existingTransactions.map((transaction) => transaction.hash),
+        );
+
+        const newTransactions = chunk
+          .filter((transaction) => !existingHashes.has(transaction.hash))
+          .map((transaction) => {
             const heroOwner = heroes.find(
               (item) => item.hero.id == transaction.heroId,
             );
-            if (transaction) {
-              await this.stakeRepository.save({
-                heroId: heroOwner.hero?.id.toString(),
-                rarity: !heroOwner.hero.burned
-                  ? Number(heroOwner.hero?.rarityIndex)
-                  : null,
-                amount: -transaction.stake,
-                network,
-                currentWallet: heroOwner.owner,
-                date: new Date(Number(transaction.timeStamp) * 1000),
-                withdraw: 1,
-                wallet: transaction.from.toLowerCase(),
-              });
+            if (!heroOwner) {
+              return null;
             }
-          }),
-        );
+            return {
+              heroId: heroOwner.hero?.id.toString(),
+              rarity: !heroOwner.hero.burned
+                ? Number(heroOwner.hero?.rarityIndex)
+                : null,
+              amount: -transaction.stake,
+              network,
+              currentWallet: heroOwner.owner,
+              date: new Date(Number(transaction.timeStamp) * 1000),
+              withdraw: 1,
+              wallet: transaction.from.toLowerCase(),
+              hash: transaction.hash,
+              blockNumber: transaction.blockNumber,
+            };
+          })
+          .filter((transaction) => transaction !== null);
+
+        if (newTransactions.length > 0) {
+          await this.stakeRepository.save(newTransactions);
+        }
       },
     );
 
@@ -355,28 +306,49 @@ export class UpdateStakeRanking {
   ) {
     const promisesSearchHero = chunkArray<Transaction>(deposited, 1000).map(
       (chunk) => async () => {
-        await Promise.all(
-          chunk.map(async (transaction) => {
+        const transactionHashes = chunk.map((transaction) => transaction.hash);
+
+        const existingTransactions = await this.stakeRepository.find({
+          where: {
+            hash: In(transactionHashes),
+          },
+          select: ['hash'],
+        });
+
+        const existingHashes = new Set(
+          existingTransactions.map((transaction) => transaction.hash),
+        );
+
+        const newTransactions = chunk
+          .filter((transaction) => !existingHashes.has(transaction.hash))
+          .map((transaction) => {
             const heroOwner = heroes.find(
               (item) => item.hero.id == transaction.heroId,
             );
-
-            if (transaction) {
-              await this.stakeRepository.save({
-                heroId: heroOwner.hero?.id.toString(),
-                rarity: !heroOwner.hero.burned
-                  ? Number(heroOwner.hero?.rarityIndex)
-                  : null,
-                amount: transaction.stake,
-                currentWallet: heroOwner.owner,
-                date: new Date(Number(transaction.timeStamp) * 1000),
-                network,
-                withdraw: 0,
-                wallet: transaction.from.toLowerCase(),
-              });
+            if (!heroOwner) {
+              return null;
             }
-          }),
-        );
+            return {
+              heroId: heroOwner.hero?.id.toString(),
+              rarity: !heroOwner.hero.burned
+                ? Number(heroOwner.hero?.rarityIndex)
+                : null,
+              amount: transaction.stake,
+              currentWallet: heroOwner.owner,
+              date: new Date(Number(transaction.timeStamp) * 1000),
+              network,
+              withdraw: 0,
+              wallet: transaction.from.toLowerCase(),
+              hash: transaction.hash,
+              blockNumber: transaction.blockNumber,
+            };
+          })
+          .filter((transaction) => transaction !== null);
+
+        // Salvar as novas transações em lote
+        if (newTransactions.length > 0) {
+          await this.stakeRepository.save(newTransactions);
+        }
       },
     );
 
@@ -389,19 +361,21 @@ export class UpdateStakeRanking {
     );
   }
 
-  async getTransactionsPolygon() {
+  async getTransactionsPolygon(startBlock: number | string) {
     return this.getTransactions([], {
       url: 'https://api.polygonscan.com/api',
       address: '0x810570AA7e16cF14DefD69D4C9796f3c1Abe2d13',
       apiKey: 'GSIGZP5QJ5NRNNDPHPKTFH4FCU4FYG4D3C',
+      startBlock,
     });
   }
 
-  async getTransactionsBSC() {
+  async getTransactionsBSC(startBlock: number | string) {
     return this.getTransactions([], {
       url: 'https://api.bscscan.com/api',
       address: '0x053282c295419e67655a5032a4da4e3f92d11f17',
       apiKey: '4C3DSD3PYF1RFPHVHER2MD8B4U36RPF1NC',
+      startBlock,
     });
   }
   async getTransactions(

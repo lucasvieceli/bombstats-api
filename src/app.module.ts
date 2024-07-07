@@ -9,6 +9,7 @@ import { StakeModules } from '@/modules/stake/stake.module';
 import { WalletModules } from '@/modules/wallet/wallet.module';
 import { SocketGateway, SocketService } from '@/services/websocket';
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -18,6 +19,20 @@ import { Module } from '@nestjs/common';
     ...StakeModules.imports,
     ...ClaimModules.imports,
     ...CronModules.imports,
+    BullModule.forRoot({
+      connection: {
+        host: 'localhost',
+        port: 6379,
+        password:
+          process.env.NODE_ENV === 'production' ? 'Bombstats@123' : undefined,
+      },
+    }),
+    BullModule.registerQueue({
+      name: 'extension-message',
+    }),
+    BullModule.registerQueue({
+      name: 'cron-every-hour',
+    }),
   ],
   controllers: [
     ...ExtensionModules.controllers,

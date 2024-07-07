@@ -46,4 +46,10 @@ export class Stake {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
+
+  @Column({ type: 'varchar', nullable: false })
+  blockNumber!: string;
+
+  @Column({ type: 'varchar', nullable: false })
+  hash!: string;
 }

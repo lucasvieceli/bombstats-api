@@ -23,4 +23,12 @@ export class StakeRepository extends Repository<Stake> {
       order: { date: 'DESC' },
     });
   }
+
+  async getHeroes(network: WalletNetwork) {
+    return this.createQueryBuilder()
+      .select('DISTINCT heroId')
+      .where('network = :network', { network })
+      .andWhere('rarity IS NOT NULL')
+      .getRawMany();
+  }
 }

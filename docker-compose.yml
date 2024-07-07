@@ -14,6 +14,14 @@ services:
       - .env
     networks:
       - bombstats-network
+  bombstats-redis:
+    image: redis:6.2
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    networks:
+      - bombstats-network
 volumes:
   bombstats-db:
 

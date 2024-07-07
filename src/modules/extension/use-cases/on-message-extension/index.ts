@@ -5,7 +5,8 @@ import { OnGetMapBlock } from '@/modules/extension/use-cases/on-get-block-map';
 import { OnStartExplodeV4 } from '@/modules/extension/use-cases/on-start-explode-v4';
 import { OnStartPve } from '@/modules/extension/use-cases/on-start-pve';
 import { OnStopPve } from '@/modules/extension/use-cases/on-stop-pve';
-import { Injectable } from '@nestjs/common';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
 
 interface IOnMessageExtension {
   wallet: string;
@@ -14,8 +15,8 @@ interface IOnMessageExtension {
   additional?: any;
 }
 
-@Injectable()
-export class OnMessageExtension {
+@Processor('extension-message', { concurrency: 10000 })
+export class OnMessageExtension extends WorkerHost {
   constructor(
     private onGetMapBlock: OnGetMapBlock,
     private onStartPve: OnStartPve,
@@ -23,13 +24,13 @@ export class OnMessageExtension {
     private onDisconnect: OnDisconnect,
     private onStopPve: OnStopPve,
     private onStartExplodeV4: OnStartExplodeV4,
-  ) {}
-  async execute({
-    network,
-    wallet: walletParam,
-    message,
-    additional,
-  }: IOnMessageExtension) {
+  ) {
+    super();
+  }
+
+  async process(job: Job<IOnMessageExtension>): Promise<any> {
+    const { network, wallet: walletParam, message, additional } = job.data;
+
     const wallet = walletParam.toLowerCase();
     if (!Object.values(WalletNetwork).includes(network)) return;
 

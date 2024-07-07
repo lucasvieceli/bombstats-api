@@ -1,4 +1,5 @@
 import { WalletNetwork } from '@/database/models/Wallet';
+import { chunkArray } from '@/utils';
 import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
 import { ABI_STAKE } from '@/utils/web3/ABI/stake-abi';
 import { getMultiCalls } from '@/utils/web3/multi-calls';
@@ -459,3 +460,105 @@ const SHIELD_LEVEL: any = {
     4: 8000,
   },
 };
+
+export interface IHeroStakeOwner {
+  hero: IHero;
+  owner: string;
+  stake: number;
+}
+
+export async function getHeroesWithStakeOwnerFromIds(
+  ids: number[],
+  network: WalletNetwork,
+) {
+  const chuncks = chunkArray<number>(ids, 300);
+
+  let resultHeroes: IHeroStakeOwner[] = [];
+  for (const ids of chuncks) {
+    const newHeroes = await getHeroesWithStakeOwnerFromIdsFn(ids, network);
+    resultHeroes = [...resultHeroes, ...newHeroes];
+  }
+
+  return resultHeroes;
+}
+
+async function getHeroesWithStakeOwnerFromIdsFn(
+  ids: number[],
+  network: WalletNetwork,
+): Promise<IHeroStakeOwner[]> {
+  try {
+    const fnInstance = getRpcWeb3(network);
+    const fnContractMult =
+      network === WalletNetwork.BSC
+        ? getContractMultiCallBsc(fnInstance)
+        : getContractMultiCallPolygon(fnInstance);
+
+    const contractAddressHero =
+      network === WalletNetwork.BSC
+        ? process.env.CONTRACT_HERO_BSC
+        : process.env.CONTRACT_HERO_POLYGON;
+    const contractAddressStake =
+      network == WalletNetwork.POLYGON
+        ? process.env.CONTRACT_STAKE_POLYGON
+        : process.env.CONTRACT_STAKE_BSC;
+
+    const contractHero = new fnInstance.eth.Contract(
+      ABI_HERO,
+      contractAddressHero,
+    );
+    const contractStake = new fnInstance.eth.Contract(
+      ABI_STAKE,
+      contractAddressStake,
+    );
+
+    const targets = [
+      ...Array(ids.length).fill(contractAddressHero),
+      ...Array(ids.length).fill(contractAddressHero),
+      ...Array(ids.length).fill(contractAddressStake),
+    ];
+
+    const data = [
+      ...ids.map((id) => contractHero.methods.tokenDetails(id).encodeABI()),
+      ...ids.map((id) => contractHero.methods.ownerOf(id).encodeABI()),
+      ...ids.map((id) =>
+        contractStake.methods.getCoinBalancesByHeroId(id).encodeABI(),
+      ),
+    ];
+
+    const result = (await fnContractMult.methods
+      .multiCallExcept(targets, data)
+      .call()) as any[];
+
+    const heroes = result
+      .slice(0, ids.length)
+      .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
+    const wallets = result.slice(ids.length, ids.length * 2).map((r: any) =>
+      r.includes('184552433732313a20696e76616c696420746f6b656e2049440') //error
+        ? null
+        : fnInstance.eth.abi.decodeParameter('address', r),
+    );
+    const stakes = result
+      .slice(ids.length * 2)
+      .map((r: any) => fnInstance.eth.abi.decodeParameter('uint256', r));
+
+    const divisor = 10n ** 18n;
+
+    return await Promise.all(
+      heroes.map(async (item, index) => ({
+        hero: await decodeHero(
+          item,
+          Number((stakes[index] as any) / divisor),
+          ids[index],
+        ),
+        owner: wallets[index] as string | null,
+        stake: Number((stakes[index] as any) / divisor),
+      })),
+    );
+  } catch (e) {
+    if (isErrorRPC(e)) {
+      return getHeroesWithStakeOwnerFromIdsFn(ids, network);
+    }
+
+    throw e;
+  }
+}
