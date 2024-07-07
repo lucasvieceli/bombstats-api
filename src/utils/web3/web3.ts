@@ -32,11 +32,11 @@ interface RpcUrl {
 }
 
 const rpcUrlsPolygon: RpcUrl[] = [
+  { url: 'https://polygon-rpc.com', online: true },
   { url: 'https://rpc.ankr.com/polygon', online: true },
   { url: 'https://rpc-mainnet.maticvigil.com', online: true },
   { url: 'https://rpc-amoy.polygon.technology', online: true },
   { url: 'https://rpc-mainnet.matic.quiknode.pro', online: true },
-  { url: 'https://polygon-rpc.com', online: true },
   { url: 'https://rpc-mainnet.matic.network', online: true },
   { url: 'https://matic-mainnet.chainstacklabs.com', online: true },
   { url: 'https://polygon-bor-rpc.publicnode.com', online: true },
@@ -112,7 +112,10 @@ export function getRpcWeb3(network: WalletNetwork) {
     network === WalletNetwork.POLYGON ? rpcUrlsPolygon : rpcUrlsBsc;
   const onlineRpcUrls = rpcUrls.filter((rpcUrl) => rpcUrl.online);
 
-  const rpcUrl =
-    onlineRpcUrls[Math.floor(Math.random() * onlineRpcUrls.length)];
+  let rpcUrl = onlineRpcUrls[Math.floor(Math.random() * onlineRpcUrls.length)];
+
+  if (!rpcUrl) {
+    rpcUrl = rpcUrls[0];
+  }
   return new Web3(new Web3.providers.HttpProvider(rpcUrl.url));
 }
