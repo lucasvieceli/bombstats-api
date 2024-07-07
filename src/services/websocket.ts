@@ -123,8 +123,11 @@ export class SocketService {
     });
   }
 
-  async emitEventCurrentMap(wallet: Wallet) {
-    const map = await this.mapBlockRepository.getCurrentMap(wallet.id);
+  async emitEventCurrentMap(wallet: Wallet, mapParam?: any) {
+    let map = mapParam;
+    if (!mapParam) {
+      map = await this.mapBlockRepository.getCurrentMap(wallet.id);
+    }
     this.emitEventWallet('current-map', wallet.walletId, wallet.network, {
       wallet: wallet.walletId,
       network: wallet.network,

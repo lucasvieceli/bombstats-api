@@ -31,7 +31,7 @@ export class OnGetMapBlock {
     const blocks = additional.blocks;
 
     await this.createBlocks(walletEntity, blocks);
-    await this.socketService.emitEventCurrentMap(walletEntity);
+    await this.socketService.emitEventCurrentMap(walletEntity, { blocks });
   }
 
   async createBlocks(walletEntity: Wallet, blocks: any) {
