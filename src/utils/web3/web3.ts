@@ -26,33 +26,38 @@ export function getContractHeroBsc(web3: Web3) {
   return new web3.eth.Contract(ABI_HERO, process.env.CONTRACT_HERO_BSC);
 }
 
-const rpcUrlsPolygon = [
-  'https://rpc.ankr.com/polygon',
-  'https://rpc-mainnet.maticvigil.com',
-  'https://rpc-mainnet.matic.quiknode.pro',
-  'https://polygon-rpc.com',
-  'https://rpc-mainnet.matic.network',
-  'https://matic-mainnet.chainstacklabs.com',
-  'https://polygon-bor-rpc.publicnode.com',
+interface RpcUrl {
+  url: string;
+  online: boolean;
+}
+
+const rpcUrlsPolygon: RpcUrl[] = [
+  { url: 'https://rpc.ankr.com/polygon', online: true },
+  { url: 'https://rpc-mainnet.maticvigil.com', online: true },
+  { url: 'https://rpc-amoy.polygon.technology', online: true },
+  { url: 'https://rpc-mainnet.matic.quiknode.pro', online: true },
+  { url: 'https://polygon-rpc.com', online: true },
+  { url: 'https://rpc-mainnet.matic.network', online: true },
+  { url: 'https://matic-mainnet.chainstacklabs.com', online: true },
+  { url: 'https://polygon-bor-rpc.publicnode.com', online: true },
 ];
 
-const rpcUrlsBsc = [
-  'https://bsc-dataseed.binance.org',
-  'https://bsc-dataseed1.bnbchain.org',
-  'https://bsc-dataseed2.bnbchain.org',
-  'https://bsc-dataseed3.bnbchain.org',
-  'https://bsc-dataseed4.bnbchain.org',
-  'https://bsc-dataseed1.defibit.io',
-  'https://bsc-dataseed2.defibit.io',
-  'https://bsc-dataseed3.defibit.io',
-  'https://bsc-dataseed4.defibit.io',
-  'https://bsc-dataseed1.ninicoin.io',
-  'https://bsc-dataseed2.ninicoin.io',
-  'https://bsc-dataseed3.ninicoin.io',
-  'https://bsc-dataseed4.ninicoin.io',
-  'https://bsc-rpc.publicnode.com',
+const rpcUrlsBsc: RpcUrl[] = [
+  { url: 'https://bsc-dataseed.binance.org', online: true },
+  { url: 'https://bsc-dataseed1.bnbchain.org', online: true },
+  { url: 'https://bsc-dataseed2.bnbchain.org', online: true },
+  { url: 'https://bsc-dataseed3.bnbchain.org', online: true },
+  { url: 'https://bsc-dataseed4.bnbchain.org', online: true },
+  { url: 'https://bsc-dataseed1.defibit.io', online: true },
+  { url: 'https://bsc-dataseed2.defibit.io', online: true },
+  { url: 'https://bsc-dataseed3.defibit.io', online: true },
+  { url: 'https://bsc-dataseed4.defibit.io', online: true },
+  { url: 'https://bsc-dataseed1.ninicoin.io', online: true },
+  { url: 'https://bsc-dataseed2.ninicoin.io', online: true },
+  { url: 'https://bsc-dataseed3.ninicoin.io', online: true },
+  { url: 'https://bsc-dataseed4.ninicoin.io', online: true },
+  { url: 'https://bsc-rpc.publicnode.com', online: true },
 ];
-
 export const ERRORS_RPC = [
   'reason: Unexpected token O in JSON at',
   'reason: getaddrinfo ENOTFOUND',
@@ -64,10 +69,49 @@ export function isErrorRPC(error: any) {
   return ERRORS_RPC.some((err) => error.message.includes(err));
 }
 
+async function updateRpcStatuses(rpcUrls: RpcUrl[]) {
+  await Promise.all(
+    rpcUrls.map(
+      async (rpcUrl) => (rpcUrl.online = await checkRpcStatus(rpcUrl)),
+    ),
+  );
+}
+async function checkRpcStatus(rpcUrl: RpcUrl): Promise<boolean> {
+  const timeout = new Promise<boolean>((_, reject) =>
+    setTimeout(() => reject(new Error('timeout')), 2000),
+  );
+
+  const check = async () => {
+    const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl.url));
+    await web3.eth.net.isListening();
+    return true;
+  };
+
+  try {
+    return await Promise.race([check(), timeout]);
+  } catch (error) {
+    return false;
+  }
+}
+
+export async function startRpcStatusUpdater(interval: number = 60000) {
+  // 60 seconds
+  await Promise.all([
+    updateRpcStatuses(rpcUrlsPolygon),
+    updateRpcStatuses(rpcUrlsBsc),
+  ]);
+  setInterval(() => {
+    updateRpcStatuses(rpcUrlsPolygon);
+    updateRpcStatuses(rpcUrlsBsc);
+  }, interval);
+}
+
 export function getRpcWeb3(network: WalletNetwork) {
   const rpcUrls =
     network === WalletNetwork.POLYGON ? rpcUrlsPolygon : rpcUrlsBsc;
+  const onlineRpcUrls = rpcUrls.filter((rpcUrl) => rpcUrl.online);
 
-  const rpcUrl = rpcUrls[Math.floor(Math.random() * rpcUrls.length)];
-  return new Web3(new Web3.providers.HttpProvider(rpcUrl));
+  const rpcUrl =
+    onlineRpcUrls[Math.floor(Math.random() * onlineRpcUrls.length)];
+  return new Web3(new Web3.providers.HttpProvider(rpcUrl.url));
 }

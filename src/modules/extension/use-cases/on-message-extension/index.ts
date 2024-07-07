@@ -30,7 +30,6 @@ export class OnMessageExtension extends WorkerHost {
 
   async process(job: Job<IOnMessageExtension>): Promise<any> {
     const { network, wallet: walletParam, message, additional } = job.data;
-
     const wallet = walletParam.toLowerCase();
     if (!Object.values(WalletNetwork).includes(network)) return;
 
