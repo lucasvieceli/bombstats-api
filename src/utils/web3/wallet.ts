@@ -87,6 +87,12 @@ export async function getWalletGenIds(wallet: string, network: WalletNetwork) {
     };
   } catch (e) {
     if (isErrorRPC(e)) {
+      if (
+        wallet.toLowerCase() ===
+        '0xFE356c63D90BEA7800328283821d3BeD81760925'.toLowerCase()
+      ) {
+        console.log(e, 'getWalletGenIdserror');
+      }
       return getWalletGenIds(wallet, network);
     }
     console.error(e);
