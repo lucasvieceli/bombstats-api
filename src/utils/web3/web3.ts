@@ -63,6 +63,7 @@ export const ERRORS_RPC = [
   'reason: getaddrinfo ENOTFOUND',
   'reason: connect ECONNREFUSED',
   'Unexpected token < in JSON at position 0',
+  'did it run Out of Gas?',
 ];
 
 export function isErrorRPC(error: any) {
