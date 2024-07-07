@@ -27,6 +27,6 @@ export class OnStartPve {
       wallet: walletValue,
       startTime: new Date(),
     });
-    this.socketService.emitEventCurrentMap(walletValue);
+    // this.socketService.emitEventCurrentMap(walletValue);
   }
 }
