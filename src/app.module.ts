@@ -31,18 +31,14 @@ import { BullModule } from '@nestjs/bullmq';
       name: 'extension-message',
       defaultJobOptions: {
         removeOnComplete: true,
-        removeOnFail: {
-          count: 100,
-        },
+        removeOnFail: true,
       },
     }),
     BullModule.registerQueue({
       name: 'cron-every-hour',
       defaultJobOptions: {
         removeOnComplete: true,
-        removeOnFail: {
-          count: 100,
-        },
+        removeOnFail: true,
       },
     }),
   ],
