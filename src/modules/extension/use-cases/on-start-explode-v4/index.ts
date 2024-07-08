@@ -21,18 +21,6 @@ export class OnStartExplodeV4 {
     private mapRepository: MapRepository,
     private socketService: SocketService,
   ) {}
-  async execute({ wallet, value, network }: any) {
-    const walletEntity = await this.walletRepository.createOrUpdate(
-      wallet,
-      network,
-    );
-    if (!walletEntity) {
-      return;
-    }
-    const blocks = await this.getBlocks(value);
-    await this.executeBlocks(walletEntity, blocks);
-    this.socketService.emitEventMapUpdate(walletEntity, { blocks });
-  }
   async executeV2({ wallet, additional, network }: IOnStartExplodeV4) {
     const walletEntity = await this.walletRepository.getWallet(wallet, network);
     if (!walletEntity) {

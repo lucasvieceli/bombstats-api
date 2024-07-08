@@ -26,6 +26,26 @@ export class HeroRepository extends Repository<Hero> {
 
     return hero;
   }
+  async updateOrInsertArray(heroData: Hero[], network: WalletNetwork) {
+    const heroes = heroData
+      .map((h) => {
+        const hero = new Hero();
+        hero.network = network;
+
+        Object.assign(hero, h); // Assign properties from heroData to the new Hero instance
+
+        if (!hero.id || !hero.network) {
+          console.log('akiii');
+          return null;
+        }
+        return hero;
+      })
+      .filter((hero) => hero !== null);
+
+    await this.upsert(heroes, ['id', 'network']);
+
+    return heroes;
+  }
 
   async getHeroesFromGenId(
     genId: number[],
@@ -44,11 +64,12 @@ export class HeroRepository extends Repository<Hero> {
 
     const heroes = await getHeroesFromGenIds(cleanedGenId, network);
 
-    return await Promise.all(
-      heroes.map(async (hero) => {
+    return await this.updateOrInsertArray(
+      heroes.map((hero) => {
         hero.wallet = wallet;
-        return this.updateOrInsert(hero as unknown as Hero, network);
+        return hero as unknown as Hero;
       }),
+      network,
     );
   }
 }

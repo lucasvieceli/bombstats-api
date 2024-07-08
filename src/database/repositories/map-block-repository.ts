@@ -5,8 +5,17 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MapBlockRepository extends Repository<MapBlock> {
+  private updateBuffer: {
+    walletId: string;
+    i: number;
+    j: number;
+    hp: number;
+  }[] = [];
+  private readonly updateInterval = 1000; // Intervalo de 1 segundo
+
   constructor(private dataSource: DataSource) {
     super(MapBlock, dataSource.createEntityManager());
+    this.startUpdateProcessor();
   }
 
   async deleteFromWalletId(walletId: string) {
@@ -18,7 +27,7 @@ export class MapBlockRepository extends Repository<MapBlock> {
   }
 
   async updateBlock(walletId: string, i: number, j: number, hp: number) {
-    return await this.update({ walletId, i, j }, { hp });
+    this.updateBuffer.push({ walletId, i, j, hp });
   }
 
   async getCurrentMap(walletId: string) {
@@ -28,5 +37,42 @@ export class MapBlockRepository extends Repository<MapBlock> {
       .getRawMany();
 
     return { blocks };
+  }
+
+  private startUpdateProcessor() {
+    setInterval(async () => {
+      if (this.updateBuffer.length > 0) {
+        const bufferCopy = this.updateBuffer.slice();
+        console.log('bufferCopy', bufferCopy.length);
+        this.updateBuffer = [];
+
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
+        try {
+          const updatePromises = bufferCopy.map(({ walletId, i, j, hp }) => {
+            return queryRunner.manager
+              .createQueryBuilder()
+              .update(MapBlock)
+              .set({ hp, updatedAt: () => 'CURRENT_TIMESTAMP' })
+              .where('walletId = :walletId AND i = :i AND j = :j', {
+                walletId,
+                i,
+                j,
+              })
+              .execute();
+          });
+
+          await Promise.all(updatePromises);
+          await queryRunner.commitTransaction();
+        } catch (err) {
+          await queryRunner.rollbackTransaction();
+          console.error('Error during bulk update', err);
+        } finally {
+          await queryRunner.release();
+        }
+      }
+    }, this.updateInterval);
   }
 }

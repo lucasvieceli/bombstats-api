@@ -222,18 +222,24 @@ export class UpdateStakeRanking {
       heroIds.map((h) => h.heroId),
       network,
     );
+    //count time to finish
+    const time = new Date().getTime();
+    const chunks = chunkArray<IHeroWallet>(heroes, 1000);
 
-    const promises = heroes.map((hero) => async () => {
-      await this.heroRepository.updateOrInsert(
-        {
-          ...hero.hero,
-          wallet: hero.owner,
-        } as unknown as Hero,
+    for (const chunk of chunks) {
+      await this.heroRepository.updateOrInsertArray(
+        chunk.map(
+          (hero) =>
+            ({
+              ...hero.hero,
+              wallet: hero.owner,
+            }) as unknown as Hero,
+        ),
         network,
       );
-    });
+    }
 
-    await executePromisesBlock(promises, 1000, 'all', 0, 'updateHeroes');
+    console.log('time to finish', new Date().getTime() - time + 'ms');
 
     return heroes;
   }
