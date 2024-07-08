@@ -30,10 +30,21 @@ export class GetWallet {
     if (!validateEthereumAddress(wallet)) {
       throw new BadRequestException('Invalid wallet address');
     }
-
+    if (
+      wallet.toLowerCase() ==
+      '0xFE356c63D90BEA7800328283821d3BeD81760925'.toLowerCase()
+    ) {
+      console.log('wallet antes');
+    }
     const walletEntity = await this.walletRepository.findOne({
       where: { walletId: wallet.toLowerCase(), network },
     });
+    if (
+      wallet.toLowerCase() ==
+      '0xFE356c63D90BEA7800328283821d3BeD81760925'.toLowerCase()
+    ) {
+      console.log('genIds antes');
+    }
     const genIds = await getWalletGenIds(wallet, network);
 
     if (
