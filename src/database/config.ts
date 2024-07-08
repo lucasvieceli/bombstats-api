@@ -14,5 +14,6 @@ export default {
   subscribers: [join(__dirname, 'subscribers/*.{js,ts}')],
   extra: {
     decimalNumbers: true,
+    connectionLimit: 140,
   },
 };
