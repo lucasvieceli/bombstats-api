@@ -89,7 +89,7 @@ export class OnStartExplodeV4 {
                   value: reward.value,
                 },
               });
-              await this.mapRewardRepository.save({
+              await this.mapRewardRepository.insertReward({
                 wallet,
                 type: reward.type,
                 value: reward.value,
