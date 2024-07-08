@@ -83,8 +83,8 @@ export class MapRewardRepository extends Repository<MapReward> {
     this.insertBuffer.push(reward);
   }
 
-  private startInsertProcessor() {
-    setInterval(async () => {
+  private async startInsertProcessor() {
+    while (true) {
       if (this.insertBuffer.length > 0) {
         const bufferCopy = this.insertBuffer.slice();
         console.log('bufferCopy insert', bufferCopy.length);
@@ -113,6 +113,10 @@ export class MapRewardRepository extends Repository<MapReward> {
           await queryRunner.release();
         }
       }
-    }, this.updateInterval);
+      await this.delay(this.updateInterval);
+    }
+  }
+  private delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

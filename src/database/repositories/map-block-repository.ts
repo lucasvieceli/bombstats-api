@@ -39,8 +39,8 @@ export class MapBlockRepository extends Repository<MapBlock> {
     return { blocks };
   }
 
-  private startUpdateProcessor() {
-    setInterval(async () => {
+  private async startUpdateProcessor() {
+    while (true) {
       if (this.updateBuffer.length > 0) {
         const bufferCopy = this.updateBuffer.slice();
         console.log('bufferCopy', bufferCopy.length);
@@ -73,6 +73,10 @@ export class MapBlockRepository extends Repository<MapBlock> {
           await queryRunner.release();
         }
       }
-    }, this.updateInterval);
+      await this.delay(this.updateInterval);
+    }
+  }
+  private delay(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

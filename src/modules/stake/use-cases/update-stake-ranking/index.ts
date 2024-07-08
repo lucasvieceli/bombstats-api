@@ -100,31 +100,28 @@ export class UpdateStakeRanking {
     console.log('allHeroes', allHeroes.length);
     const amount = allHeroes.reduce((acc, item) => acc + item.stake, 0);
 
-    await Promise.all([
-      this.insertRankingWallet(allHeroes, network),
-      this.insertRankingRarityHero(allHeroes, network, 0),
-      this.insertRankingRarityHero(allHeroes, network, 1),
-      this.insertRankingRarityHero(allHeroes, network, 2),
-      this.insertRankingRarityHero(allHeroes, network, 3),
-      this.insertRankingRarityHero(allHeroes, network, 4),
-      this.insertRankingRarityHero(allHeroes, network, 5),
-      this.totalsRepository.insertOrUpdate(
-        'stake-amount',
-        amount.toString(),
-        network,
-      ),
-      this.totalsRepository.insertOrUpdate(
-        'stake-heroes',
-        allHeroes.length.toString(),
-        network,
-      ),
-      this.totalsRepository.insertOrUpdate(
-        'stake-average',
-        (amount / allHeroes.length).toString(),
-        network,
-      ),
-    ]);
-
+    await this.insertRankingWallet(allHeroes, network);
+    await this.insertRankingRarityHero(allHeroes, network, 0);
+    await this.insertRankingRarityHero(allHeroes, network, 1);
+    await this.insertRankingRarityHero(allHeroes, network, 2);
+    await this.insertRankingRarityHero(allHeroes, network, 3);
+    await this.insertRankingRarityHero(allHeroes, network, 4);
+    await this.insertRankingRarityHero(allHeroes, network, 5);
+    await this.totalsRepository.insertOrUpdate(
+      'stake-amount',
+      amount.toString(),
+      network,
+    );
+    await this.totalsRepository.insertOrUpdate(
+      'stake-heroes',
+      allHeroes.length.toString(),
+      network,
+    );
+    await this.totalsRepository.insertOrUpdate(
+      'stake-average',
+      (amount / allHeroes.length).toString(),
+      network,
+    );
     console.log(`Terminou UpdateStakeRanking ${network}`);
   }
 
