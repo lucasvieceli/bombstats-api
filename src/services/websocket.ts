@@ -4,6 +4,7 @@ import { WalletRepository } from '@/database/repositories/wallet-repository';
 import { Injectable } from '@nestjs/common';
 import {
   OnGatewayConnection,
+  OnGatewayDisconnect,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
@@ -58,7 +59,7 @@ export class SocketService {
     this.connectedClients.set(clientId, { socket, wallets: [] });
 
     socket.on('disconnect', () => {
-      this.connectedClients.delete(clientId);
+      this.handleDisconnect(socket);
     });
 
     socket.on('listen-wallet', async (params) => {
@@ -102,7 +103,10 @@ export class SocketService {
       socket.on(name, fn);
     });
   }
-
+  handleDisconnect(socket: Socket): void {
+    const clientId = socket.id;
+    this.connectedClients.delete(clientId);
+  }
   emitEventWallet(
     event: string,
     wallet: string,
@@ -167,7 +171,7 @@ export class SocketService {
     credentials: true,
   },
 })
-export class SocketGateway implements OnGatewayConnection {
+export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private server: Socket;
 
@@ -175,6 +179,10 @@ export class SocketGateway implements OnGatewayConnection {
 
   handleConnection(socket: Socket): void {
     this.socketService.handleConnection(socket);
+  }
+
+  handleDisconnect(socket: Socket): void {
+    this.socketService.handleDisconnect(socket);
   }
 
   // Implement other Socket.IO event handlers and message handlers
