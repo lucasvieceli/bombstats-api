@@ -36,18 +36,31 @@ export class OnGetMapBlock {
 
   async createBlocks(walletEntity: Wallet, blocks: any) {
     await this.mapBlockRepository.deleteFromWalletId(walletEntity.id);
-    return Promise.all(
-      blocks.map(async (block: any) => {
-        this.mapBlockRepository.save({
+    this.mapBlockRepository.save(
+      blocks.map((block: any) => {
+        return {
           wallet: walletEntity,
           type: block.type,
           i: block.i,
           j: block.j,
           maxHp: block.maxHp,
           hp: block.hp,
-        });
+        };
       }),
     );
+
+    // return Promise.all(
+    //   blocks.map(async (block: any) => {
+    //     this.mapBlockRepository.save({
+    //       wallet: walletEntity,
+    //       type: block.type,
+    //       i: block.i,
+    //       j: block.j,
+    //       maxHp: block.maxHp,
+    //       hp: block.hp,
+    //     });
+    //   }),
+    // );
   }
 
   async createMap(

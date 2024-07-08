@@ -155,20 +155,35 @@ export class UpdateStakeRanking {
       heroesGroupedByRarity,
     ).sort((a, b) => b[1].stake - a[1].stake);
 
-    await Promise.all(
+    await this.stakeRankingHeroRepository.save(
       heroesGroupedByRaritySortedByStakeDescArray.map(
-        async ([heroId, hero], index) => {
-          await this.stakeRankingHeroRepository.save({
+        ([heroId, hero], index) => {
+          return {
             network,
             heroId: heroId,
             amount: hero.stake,
             wallet: hero.owner,
             rarity,
             position: index + 1,
-          });
+          };
         },
       ),
     );
+
+    // await Promise.all(
+    //   heroesGroupedByRaritySortedByStakeDescArray.map(
+    //     async ([heroId, hero], index) => {
+    //       await this.stakeRankingHeroRepository.save({
+    //         network,
+    //         heroId: heroId,
+    //         amount: hero.stake,
+    //         wallet: hero.owner,
+    //         rarity,
+    //         position: index + 1,
+    //       });
+    //     },
+    //   ),
+    // );
   }
 
   async insertRankingWallet(heroes: IHeroWallet[], network: WalletNetwork) {
@@ -192,18 +207,31 @@ export class UpdateStakeRanking {
       heroesGroupedByWallet,
     ).sort((a, b) => b[1] - a[1]);
 
-    await Promise.all(
+    await this.stakeRankingWalletRepository.save(
       heroesGroupedByWalletSortedByStakeDescArray.map(
-        async ([wallet, stake], index) => {
-          await this.stakeRankingWalletRepository.save({
+        ([wallet, stake], index) => {
+          return {
             network,
             wallet,
             amount: stake,
             position: index + 1,
-          });
+          };
         },
       ),
     );
+
+    // await Promise.all(
+    //   heroesGroupedByWalletSortedByStakeDescArray.map(
+    //     async ([wallet, stake], index) => {
+    //       await this.stakeRankingWalletRepository.save({
+    //         network,
+    //         wallet,
+    //         amount: stake,
+    //         position: index + 1,
+    //       });
+    //     },
+    //   ),
+    // );
   }
 
   async getHeroes(allTransactions: Transaction[], network: WalletNetwork) {
