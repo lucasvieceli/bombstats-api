@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   Entity,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -10,6 +11,9 @@ import { FarmSession } from './FarmSession';
 import { Map } from './Map';
 import { MapBlock } from './MapBlock';
 import { MapReward } from '@/database/models/MapReward';
+import { StakeRankingWallet } from '@/database/models/StakeRankingWallet';
+import { ClaimRankingWallet } from '@/database/models/ClaimRankingWallet';
+import { FarmAverage } from '@/database/models/FarmAverage';
 
 export enum WalletStatus {
   ONLINE = 'ONLINE',
@@ -58,6 +62,12 @@ export class Wallet {
   })
   online: WalletStatus | null;
 
+  @Column('boolean', {
+    name: 'extensionInstalled',
+    nullable: true,
+  })
+  extensionInstalled: boolean;
+
   @OneToMany(() => FarmSession, (farmSession) => farmSession.wallet)
   farmSessions: FarmSession[];
 
@@ -69,4 +79,19 @@ export class Wallet {
 
   @OneToMany(() => MapReward, (mapReward) => mapReward.wallet)
   mapRewards: MapReward[];
+
+  @OneToOne(
+    () => StakeRankingWallet,
+    (stakeRankingWallet) => stakeRankingWallet.walletEntity,
+  )
+  stakeRankingWallet: StakeRankingWallet;
+
+  @OneToOne(
+    () => ClaimRankingWallet,
+    (claimRankingWallet) => claimRankingWallet.walletEntity,
+  )
+  claimRankingWallet: ClaimRankingWallet;
+
+  @OneToOne(() => FarmAverage, (farmAverage) => farmAverage.wallet)
+  farmAverage: FarmAverage;
 }

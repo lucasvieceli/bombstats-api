@@ -501,7 +501,6 @@ async function getHeroesWithStakeOwnerFromIdsFn(
       network == WalletNetwork.POLYGON
         ? process.env.CONTRACT_STAKE_POLYGON
         : process.env.CONTRACT_STAKE_BSC;
-
     const contractHero = new fnInstance.eth.Contract(
       ABI_HERO,
       contractAddressHero,

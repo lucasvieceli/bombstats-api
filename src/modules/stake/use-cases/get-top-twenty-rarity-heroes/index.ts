@@ -1,6 +1,6 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { StakeRankingHeroRepository } from '@/database/repositories/stake-ranking-hero';
-import { getHeroesFromIds } from '@/utils/web3/hero';
+import { GetHeroesByIds } from '@/modules/hero/use-cases/get-heroes-by-ids';
 import { Injectable } from '@nestjs/common';
 
 interface IGetTopTwentyRarityHeroes {
@@ -10,7 +10,10 @@ interface IGetTopTwentyRarityHeroes {
 
 @Injectable()
 export class GetTopTwentyRarityHeroes {
-  constructor(private stakeRankingHeroRepository: StakeRankingHeroRepository) {}
+  constructor(
+    private stakeRankingHeroRepository: StakeRankingHeroRepository,
+    private getHeroFromIds: GetHeroesByIds,
+  ) {}
   async execute({ network, rarity }: IGetTopTwentyRarityHeroes) {
     if (rarity < 0 || rarity > 5) {
       throw new Error('Invalid rarity');
@@ -26,7 +29,10 @@ export class GetTopTwentyRarityHeroes {
 
     const heroesIds = list.heroes.map((hero) => hero.heroId);
 
-    const heroes = await getHeroesFromIds(heroesIds, network);
+    const heroes = await this.getHeroFromIds.execute({
+      ids: heroesIds,
+      network,
+    });
 
     const heroesMap = list.heroes.map((hero) => ({
       ...hero,

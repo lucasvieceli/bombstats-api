@@ -2,6 +2,7 @@ import { Claim, ClaimToken } from '@/database/models/Claim';
 import { WalletNetwork } from '@/database/models/Wallet';
 import { ClaimRankingWalletRepository } from '@/database/repositories/claim-ranking-wallet-repository';
 import { ClaimRepository } from '@/database/repositories/claim-repository';
+import { WalletRepository } from '@/database/repositories/wallet-repository';
 import { executePromisesBlock } from '@/utils';
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
@@ -47,6 +48,7 @@ export class UpdateClaimRanking {
   constructor(
     private claimRepository: ClaimRepository,
     private claimRankingWalletRepository: ClaimRankingWalletRepository,
+    private walletRepository: WalletRepository,
   ) {}
 
   async execute({ network, token }: IUpdateClaimRanking) {
@@ -68,6 +70,7 @@ export class UpdateClaimRanking {
       `Encontrou ${transactions.length} transações de claim tokens ${network}`,
     );
 
+    await this.createWallets(transactions, network);
     await this.insertTransactions(transactions, network, token);
     await this.claimRankingWalletRepository.updateClaimRankingLastSevenDays(
       network,
@@ -109,6 +112,19 @@ export class UpdateClaimRanking {
       0,
       'insertTransactions',
     );
+  }
+
+  async createWallets(allTransactions: Transaction[], network: WalletNetwork) {
+    //remove duplicates
+    const walletsIds = Array.from(
+      new Set(allTransactions.map((item) => item.from.toLowerCase())),
+    );
+    const wallets = walletsIds.map((walletId) => ({
+      walletId,
+      network,
+    }));
+
+    return await this.walletRepository.upsert(wallets, ['walletId', 'network']);
   }
 
   async getTransactionsPolygon(lastBlockNumber: number, token: ClaimToken) {

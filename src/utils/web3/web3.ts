@@ -35,7 +35,7 @@ const rpcUrlsPolygon: RpcUrl[] = [
   { url: 'https://polygon-rpc.com', online: true },
   { url: 'https://rpc.ankr.com/polygon', online: true },
   { url: 'https://rpc-mainnet.maticvigil.com', online: true },
-  { url: 'https://rpc-amoy.polygon.technology', online: true },
+  // { url: 'https://rpc-amoy.polygon.technology', online: true },
   { url: 'https://rpc-mainnet.matic.quiknode.pro', online: true },
   { url: 'https://rpc-mainnet.matic.network', online: true },
   { url: 'https://matic-mainnet.chainstacklabs.com', online: true },

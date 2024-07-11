@@ -5,9 +5,10 @@ import { StakeRankingHeroRepository } from '@/database/repositories/stake-rankin
 import { StakeRankingWalletRepository } from '@/database/repositories/stake-ranking-wallet';
 import { StakeRepository } from '@/database/repositories/stake-repository';
 import { TotalsRepository } from '@/database/repositories/totals-repository';
+import { WalletRepository } from '@/database/repositories/wallet-repository';
 import { chunkArray, executePromisesBlock } from '@/utils';
 import { IHero, getHeroesWithStakeOwnerFromIds } from '@/utils/web3/hero';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { In } from 'typeorm';
 
@@ -58,6 +59,7 @@ export class UpdateStakeRanking {
     private stakeRankingWalletRepository: StakeRankingWalletRepository,
     private totalsRepository: TotalsRepository,
     private heroRepository: HeroRepository,
+    private walletRepository: WalletRepository,
   ) {}
   async execute({ network }: IUpdateStakeRanking) {
     // await this.stakeRepository.delete({ network });
@@ -71,13 +73,13 @@ export class UpdateStakeRanking {
         })
       )?.blockNumber ?? defaultBlock;
 
-    console.log('buscando');
+    Logger.log('buscando transacoes ' + network);
     if (network == WalletNetwork.BSC) {
       transactions = await this.getTransactionsBSC(lastBlockNumber);
     } else {
       transactions = await this.getTransactionsPolygon(lastBlockNumber);
     }
-    console.log('transactions', transactions.length);
+    Logger.log(`transactions ${transactions.length}`);
     const deposited = transactions
       .filter((transaction) => transaction.functionName == DEPOSIT_METHOD)
       .map(this.parseHeroAndStake);
@@ -90,23 +92,29 @@ export class UpdateStakeRanking {
       [...deposited, ...withdraws],
       network,
     );
-    console.log('newHeroes', newHeroes.length);
+    console.log('newHeroes', newHeroes);
+    Logger.log(`newHeroes ${newHeroes.length}`);
 
     await this.insertDeposit(deposited, network, newHeroes);
 
     await this.withdrawStake(withdraws, network, newHeroes);
-
+    Logger.log(`atualizando heroes`);
     const allHeroes = await this.updateHeroes(network);
-    console.log('allHeroes', allHeroes.length);
+    Logger.log(`allHeroes ${allHeroes.length}`);
     const amount = allHeroes.reduce((acc, item) => acc + item.stake, 0);
 
+    Logger.log(`criando wallets heroes`);
+    await this.createWallets([...deposited, ...withdraws], network);
+    Logger.log(`atualizando ranking wallet`);
     await this.insertRankingWallet(allHeroes, network);
+    Logger.log(`atualizando ranking heroes`);
     await this.insertRankingRarityHero(allHeroes, network, 0);
     await this.insertRankingRarityHero(allHeroes, network, 1);
     await this.insertRankingRarityHero(allHeroes, network, 2);
     await this.insertRankingRarityHero(allHeroes, network, 3);
     await this.insertRankingRarityHero(allHeroes, network, 4);
     await this.insertRankingRarityHero(allHeroes, network, 5);
+    Logger.log(`atualizando totais`);
     await this.totalsRepository.insertOrUpdate(
       'stake-amount',
       amount.toString(),
@@ -122,7 +130,7 @@ export class UpdateStakeRanking {
       (amount / allHeroes.length).toString(),
       network,
     );
-    console.log(`Terminou UpdateStakeRanking ${network}`);
+    Logger.log(`Terminou UpdateStakeRanking ${network}`);
   }
 
   async insertRankingRarityHero(
@@ -238,6 +246,19 @@ export class UpdateStakeRanking {
     const ids = Array.from(new Set(allTransactions.map((item) => item.heroId)));
 
     return await getHeroesWithStakeOwnerFromIds(ids, network);
+  }
+
+  async createWallets(allTransactions: Transaction[], network: WalletNetwork) {
+    //remove duplicates
+    const walletsIds = Array.from(
+      new Set(allTransactions.map((item) => item.from.toLowerCase())),
+    );
+    const wallets = walletsIds.map((walletId) => ({
+      walletId,
+      network,
+    }));
+
+    return await this.walletRepository.upsert(wallets, ['walletId', 'network']);
   }
 
   async updateHeroes(network: WalletNetwork) {

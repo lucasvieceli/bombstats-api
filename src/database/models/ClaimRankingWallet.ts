@@ -1,10 +1,12 @@
 import { ClaimToken } from '@/database/models/Claim';
-import { WalletNetwork } from '@/database/models/Wallet';
+import { Wallet, WalletNetwork } from '@/database/models/Wallet';
 import 'reflect-metadata';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -20,12 +22,14 @@ export class ClaimRankingWallet {
   @Column({
     type: 'enum',
     enum: WalletNetwork,
+    enumName: 'network',
     nullable: true,
   })
   network!: WalletNetwork;
   @Column({
     type: 'enum',
     enum: ClaimToken,
+    enumName: 'token',
     nullable: true,
   })
   token!: ClaimToken;
@@ -41,4 +45,11 @@ export class ClaimRankingWallet {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
+
+  @OneToOne(() => Wallet, (wallet) => wallet.claimRankingWallet)
+  @JoinColumn([
+    { name: 'wallet', referencedColumnName: 'walletId' },
+    { name: 'network', referencedColumnName: 'network' },
+  ])
+  walletEntity!: Wallet;
 }

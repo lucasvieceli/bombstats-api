@@ -27,8 +27,9 @@ export class OnStartExplodeV4 {
       return;
     }
     const blocks = additional?.blocks;
+    this.socketService.emitEventMapUpdate(walletEntity, additional);
+
     if (!blocks) return;
-    this.socketService.emitEventMapUpdate(walletEntity, { blocks });
 
     await this.executeBlocks(walletEntity, blocks);
   }

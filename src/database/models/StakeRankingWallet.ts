@@ -1,9 +1,11 @@
-import { WalletNetwork } from '@/database/models/Wallet';
+import { Wallet, WalletNetwork } from '@/database/models/Wallet';
 import 'reflect-metadata';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -19,6 +21,7 @@ export class StakeRankingWallet {
   @Column({
     type: 'enum',
     enum: WalletNetwork,
+    enumName: 'network',
     nullable: true,
   })
   network!: WalletNetwork;
@@ -34,4 +37,11 @@ export class StakeRankingWallet {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
+
+  @OneToOne(() => Wallet, (wallet) => wallet.stakeRankingWallet)
+  @JoinColumn([
+    { name: 'wallet', referencedColumnName: 'walletId' },
+    { name: 'network', referencedColumnName: 'network' },
+  ])
+  walletEntity!: Wallet;
 }

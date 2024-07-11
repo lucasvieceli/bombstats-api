@@ -1,10 +1,7 @@
 import { DataSource, Repository } from 'typeorm';
 
-import { FarmSession } from '@/database/models/FarmSession';
-import { Map } from '@/database/models/Map';
 import { MapReward } from '@/database/models/MapReward';
 import { Injectable } from '@nestjs/common';
-import { subHours } from 'date-fns';
 
 @Injectable()
 export class MapRewardRepository extends Repository<MapReward> {
@@ -14,69 +11,6 @@ export class MapRewardRepository extends Repository<MapReward> {
   constructor(private dataSource: DataSource) {
     super(MapReward, dataSource.createEntityManager());
     this.startInsertProcessor();
-  }
-
-  async getAverageRewardByWalletId(walletId: string) {
-    if (!walletId) return null;
-
-    const lastFarm = await this.findOne({
-      where: { walletId },
-      order: { createdAt: 'DESC' },
-    });
-
-    if (!lastFarm) return null;
-
-    const startDate = subHours(new Date(lastFarm.createdAt), 24);
-    const endDate = new Date(lastFarm.createdAt);
-
-    const [totalSecondsResult, tokens, maps] = await Promise.all([
-      this.dataSource
-        .getRepository(FarmSession)
-        .createQueryBuilder('farmSession')
-        .select('SUM(farmSession.totalTime)', 'totalSeconds')
-        .where('farmSession.walletId = :walletId', { walletId })
-        .andWhere('farmSession.startTime >= :startDate', { startDate })
-        .andWhere('farmSession.endTime <= :endDate', { endDate })
-        .andWhere('farmSession.totalTime > 0')
-        .getRawOne(),
-      this.createQueryBuilder()
-        .select('SUM(value)', 'total')
-        .addSelect('type')
-        .where('walletId = :walletId', { walletId })
-        .andWhere('createdAt >= :startDate', { startDate })
-        .andWhere('createdAt <= :endDate', { endDate })
-        .groupBy('type')
-        .getRawMany(),
-      this.dataSource
-        .getRepository(Map)
-        .createQueryBuilder('map')
-        .select('count(id)', 'total')
-        .where('walletId = :walletId', { walletId })
-        .andWhere('createdAt >= :startDate', { startDate })
-        .andWhere('createdAt <= :endDate', { endDate })
-        .getRawOne(),
-    ]);
-
-    const totalSeconds = totalSecondsResult.totalSeconds || 0;
-    const totalHours = totalSeconds / 3600 < 1 ? 1 : totalSeconds / 3600;
-
-    return {
-      totalHours,
-      totalSeconds,
-      startDate,
-      endDate,
-      maps: {
-        total: Number(maps.total),
-        average: maps.total / totalHours,
-      },
-      tokens: {
-        list: tokens,
-        average: tokens.map((token) => ({
-          type: token.type,
-          value: Number(token.total) / totalHours,
-        })),
-      },
-    };
   }
 
   async insertReward(reward: Partial<MapReward>) {
@@ -92,7 +26,7 @@ export class MapRewardRepository extends Repository<MapReward> {
 
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
-        await queryRunner.startTransaction();
+        await queryRunner.startTransaction('READ UNCOMMITTED');
 
         try {
           const updatePromises = bufferCopy.map((value) => {

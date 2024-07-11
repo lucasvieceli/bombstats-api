@@ -24,6 +24,7 @@ export class Claim {
   @Column({
     type: 'enum',
     enum: WalletNetwork,
+    enumName: 'network',
     nullable: true,
   })
   network!: WalletNetwork;
@@ -31,6 +32,7 @@ export class Claim {
   @Column({
     type: 'enum',
     enum: ClaimToken,
+    enumName: 'token',
     nullable: true,
   })
   token!: ClaimToken;

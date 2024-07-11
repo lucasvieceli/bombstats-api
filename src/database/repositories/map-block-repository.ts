@@ -48,7 +48,7 @@ export class MapBlockRepository extends Repository<MapBlock> {
 
         const queryRunner = this.dataSource.createQueryRunner();
         await queryRunner.connect();
-        await queryRunner.startTransaction();
+        await queryRunner.startTransaction('READ UNCOMMITTED');
 
         try {
           const updatePromises = bufferCopy.map(({ walletId, i, j, hp }) => {

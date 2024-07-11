@@ -24,20 +24,24 @@ export class WalletRepository extends Repository<Wallet> {
       wallet = this.create({
         walletId: walletId.toLowerCase(),
         online: WalletStatus.ONLINE,
+        extensionInstalled: true,
         network,
       });
       return await this.save(wallet);
     }
 
     wallet.online = WalletStatus.ONLINE;
+    wallet.extensionInstalled = true;
     return await this.save(wallet);
   }
 
   async getTotalOnline(network: WalletNetwork) {
-    return this.count({ where: { network, online: WalletStatus.ONLINE } });
+    return this.count({
+      where: { network, online: WalletStatus.ONLINE, extensionInstalled: true },
+    });
   }
 
   async getTotalInstalled(network: WalletNetwork) {
-    return this.count({ where: { network } });
+    return this.count({ where: { network, extensionInstalled: true } });
   }
 }

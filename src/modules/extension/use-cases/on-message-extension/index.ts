@@ -5,6 +5,7 @@ import { OnGetMapBlock } from '@/modules/extension/use-cases/on-get-block-map';
 import { OnStartExplodeV4 } from '@/modules/extension/use-cases/on-start-explode-v4';
 import { OnStartPve } from '@/modules/extension/use-cases/on-start-pve';
 import { OnStopPve } from '@/modules/extension/use-cases/on-stop-pve';
+import { SocketService } from '@/services/websocket';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 
@@ -24,6 +25,7 @@ export class OnMessageExtension extends WorkerHost {
     private onDisconnect: OnDisconnect,
     private onStopPve: OnStopPve,
     private onStartExplodeV4: OnStartExplodeV4,
+    private socketService: SocketService,
   ) {
     super();
   }
@@ -47,6 +49,19 @@ export class OnMessageExtension extends WorkerHost {
         this.onDisconnect.execute({
           wallet,
           network,
+        });
+        break;
+      case 'GO_SLEEP':
+      case 'GO_HOME':
+      case 'GO_WORK':
+      case 'ACTIVE_BOMBER':
+      case 'GET_ACTIVE_BOMBER':
+      case 'CHANGE_BBM_STAGE':
+      case 'SYNC_BOMBERMAN':
+        this.socketService.emitEventWallet(message, wallet, network, {
+          wallet,
+          network,
+          value: additional,
         });
         break;
 

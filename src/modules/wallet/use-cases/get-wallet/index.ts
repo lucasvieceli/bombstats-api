@@ -1,15 +1,15 @@
 import { ClaimToken } from '@/database/models/Claim';
 import { WalletNetwork } from '@/database/models/Wallet';
 import { ClaimRankingWalletRepository } from '@/database/repositories/claim-ranking-wallet-repository';
+import { FarmAverageRepository } from '@/database/repositories/farm-average-repository';
 import { HeroRepository } from '@/database/repositories/hero-repository';
-import { MapRewardRepository } from '@/database/repositories/map-reward-repository';
-import { StakeRankingWalletRepository } from '@/database/repositories/stake-ranking-wallet';
 import { StakeRepository } from '@/database/repositories/stake-repository';
 import { WalletRepository } from '@/database/repositories/wallet-repository';
 import { validateEthereumAddress } from '@/utils/web3/check-wallet';
 import { getHousesFromGenIds } from '@/utils/web3/house';
 import { getWalletGenIds } from '@/utils/web3/wallet';
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { differenceInHours } from 'date-fns';
 
 interface IGetWallet {
   wallet: string;
@@ -20,8 +20,7 @@ interface IGetWallet {
 export class GetWallet {
   constructor(
     private walletRepository: WalletRepository,
-    private mapRewardRepository: MapRewardRepository,
-    private stakeRankingWalletRepository: StakeRankingWalletRepository,
+    private farmAverageRepository: FarmAverageRepository,
     private stakeRepository: StakeRepository,
     private claimRankingWalletRepository: ClaimRankingWalletRepository,
     private heroRepository: HeroRepository,
@@ -38,7 +37,20 @@ export class GetWallet {
     }
     const walletEntity = await this.walletRepository.findOne({
       where: { walletId: wallet.toLowerCase(), network },
+      relations: ['stakeRankingWallet', 'claimRankingWallet', 'farmAverage'],
     });
+
+    const lastUpdateFarmAverage = walletEntity?.farmAverage?.updatedAt;
+    if (
+      !lastUpdateFarmAverage ||
+      differenceInHours(new Date(), lastUpdateFarmAverage) >= 1
+    ) {
+      walletEntity.farmAverage =
+        await this.farmAverageRepository.createAverageRewardByWalletId(
+          walletEntity?.id,
+        );
+    }
+
     if (
       wallet.toLowerCase() ==
       '0xFE356c63D90BEA7800328283821d3BeD81760925'.toLowerCase()
@@ -54,7 +66,7 @@ export class GetWallet {
       console.log('genIds', genIds);
     }
 
-    const [heroes, houses, averageFarm, stakeRanking, stakes, claimRanking] =
+    const [heroes, houses, averageFarm, stakes, claimRanking] =
       await Promise.all([
         this.heroRepository.getHeroesFromGenId(genIds.heroes, network, wallet),
         getHousesFromGenIds(genIds.houses),
@@ -62,7 +74,6 @@ export class GetWallet {
           resolve(null);
         }),
         // this.mapRewardRepository.getAverageRewardByWalletId(walletEntity?.id),
-        this.stakeRankingWalletRepository.getPositionRanking(wallet, network),
         this.stakeRepository.getStakesByWallet(wallet, network),
         this.claimRankingWalletRepository.getPositionRanking(
           wallet,
@@ -73,12 +84,11 @@ export class GetWallet {
 
     return {
       walletId: wallet,
+      wallet: walletEntity,
       heroes,
       houses,
       tokens: genIds.tokens,
-      wallet: walletEntity,
       averageFarm,
-      stakeRanking,
       claimRanking,
       stakes,
     };
