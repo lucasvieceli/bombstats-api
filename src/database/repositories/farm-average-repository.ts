@@ -21,7 +21,24 @@ export class FarmAverageRepository extends Repository<FarmAverage> {
       order: { createdAt: 'DESC' },
     });
 
-    if (!lastFarm) return null;
+    if (!lastFarm) {
+      await this.upsert(
+        {
+          walletId,
+          totalHours: 0,
+          totalSeconds: 0,
+          startDate: null,
+          endDate: null,
+          mapsTotal: null,
+          mapsAverage: null,
+          tokensList: null,
+          tokensAverage: null,
+          updatedAt: new Date(),
+        },
+        ['walletId'],
+      );
+      return null;
+    }
 
     const startDate = subHours(new Date(lastFarm.createdAt), 24);
     const endDate = new Date(lastFarm.createdAt);
