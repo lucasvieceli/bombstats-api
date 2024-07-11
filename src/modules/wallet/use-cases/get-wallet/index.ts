@@ -1,6 +1,4 @@
-import { ClaimToken } from '@/database/models/Claim';
 import { WalletNetwork } from '@/database/models/Wallet';
-import { ClaimRankingWalletRepository } from '@/database/repositories/claim-ranking-wallet-repository';
 import { FarmAverageRepository } from '@/database/repositories/farm-average-repository';
 import { HeroRepository } from '@/database/repositories/hero-repository';
 import { StakeRepository } from '@/database/repositories/stake-repository';
@@ -22,7 +20,6 @@ export class GetWallet {
     private walletRepository: WalletRepository,
     private farmAverageRepository: FarmAverageRepository,
     private stakeRepository: StakeRepository,
-    private claimRankingWalletRepository: ClaimRankingWalletRepository,
     private heroRepository: HeroRepository,
   ) {}
   async execute({ wallet, network }: IGetWallet) {
@@ -67,21 +64,15 @@ export class GetWallet {
       console.log('genIds', genIds);
     }
 
-    const [heroes, houses, averageFarm, stakes, claimRanking] =
-      await Promise.all([
-        this.heroRepository.getHeroesFromGenId(genIds.heroes, network, wallet),
-        getHousesFromGenIds(genIds.houses),
-        new Promise((resolve) => {
-          resolve(null);
-        }),
-        // this.mapRewardRepository.getAverageRewardByWalletId(walletEntity?.id),
-        this.stakeRepository.getStakesByWallet(wallet, network),
-        this.claimRankingWalletRepository.getPositionRanking(
-          wallet,
-          network,
-          ClaimToken.BCOIN,
-        ),
-      ]);
+    const [heroes, houses, averageFarm, stakes] = await Promise.all([
+      this.heroRepository.getHeroesFromGenId(genIds.heroes, network, wallet),
+      getHousesFromGenIds(genIds.houses),
+      new Promise((resolve) => {
+        resolve(null);
+      }),
+      // this.mapRewardRepository.getAverageRewardByWalletId(walletEntity?.id),
+      this.stakeRepository.getStakesByWallet(wallet, network),
+    ]);
 
     return {
       walletId: wallet,
@@ -90,7 +81,6 @@ export class GetWallet {
       houses,
       tokens: genIds.tokens,
       averageFarm,
-      claimRanking,
       stakes,
     };
   }

@@ -20,6 +20,7 @@ export class StakeRepository extends Repository<Stake> {
         rarity: true,
       },
       where: { wallet, network },
+      take: 20,
       order: { date: 'DESC' },
     });
   }
