@@ -1,4 +1,9 @@
-import { DataSource, Repository } from 'typeorm';
+import {
+  DataSource,
+  FindOptionsRelationByString,
+  FindOptionsRelations,
+  Repository,
+} from 'typeorm';
 
 import { Wallet, WalletNetwork, WalletStatus } from '@/database/models/Wallet';
 import { Injectable } from '@nestjs/common';
@@ -13,6 +18,29 @@ export class WalletRepository extends Repository<Wallet> {
     return this.findOne({
       where: { walletId: walletId.toLowerCase(), network },
     });
+  }
+
+  async findOrCreate(
+    walletId: string,
+    network: WalletNetwork,
+    relations: FindOptionsRelations<Wallet> | FindOptionsRelationByString,
+  ) {
+    let wallet = await this.findOne({
+      where: { walletId: walletId.toLowerCase(), network },
+      relations,
+    });
+
+    if (!wallet) {
+      wallet = this.create({
+        walletId: walletId.toLowerCase(),
+        online: WalletStatus.OFFLINE,
+        extensionInstalled: false,
+        network,
+      });
+      return await this.save(wallet);
+    }
+
+    return wallet;
   }
 
   async createOrUpdate(walletId: string, network: WalletNetwork) {

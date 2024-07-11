@@ -35,10 +35,11 @@ export class GetWallet {
     ) {
       console.log('wallet antes');
     }
-    const walletEntity = await this.walletRepository.findOne({
-      where: { walletId: wallet.toLowerCase(), network },
-      relations: ['stakeRankingWallet', 'claimRankingWallet', 'farmAverage'],
-    });
+    const walletEntity = await this.walletRepository.findOrCreate(
+      wallet,
+      network,
+      ['stakeRankingWallet', 'claimRankingWallet', 'farmAverage'],
+    );
 
     const lastUpdateFarmAverage = walletEntity?.farmAverage?.updatedAt;
     if (
