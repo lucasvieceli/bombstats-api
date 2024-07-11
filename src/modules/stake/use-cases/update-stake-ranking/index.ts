@@ -92,7 +92,7 @@ export class UpdateStakeRanking {
       [...deposited, ...withdraws],
       network,
     );
-    console.log('newHeroes', newHeroes);
+    console.log('newHeroes', newHeroes.length);
     Logger.log(`newHeroes ${newHeroes.length}`);
 
     await this.insertDeposit(deposited, network, newHeroes);
@@ -269,7 +269,6 @@ export class UpdateStakeRanking {
       network,
     );
     //count time to finish
-    const time = new Date().getTime();
     const chunks = chunkArray<IHeroWallet>(heroes, 1000);
 
     for (const chunk of chunks) {
@@ -284,8 +283,6 @@ export class UpdateStakeRanking {
         network,
       );
     }
-
-    console.log('time to finish', new Date().getTime() - time + 'ms');
 
     return heroes;
   }
