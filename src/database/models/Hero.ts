@@ -1,9 +1,13 @@
+import { Stake } from '@/database/models/Stake';
+import { StakeRankingHero } from '@/database/models/StakeRankingHero';
 import { WalletNetwork } from '@/database/models/Wallet';
 import 'reflect-metadata';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
+  OneToOne,
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -106,4 +110,10 @@ export class Hero {
 
   @Column({ type: 'varchar', length: 150, nullable: true })
   wallet: string;
+
+  @OneToOne(() => StakeRankingHero, (stakeRankingHero) => stakeRankingHero.hero)
+  stakeRankingHero?: StakeRankingHero;
+
+  @OneToMany(() => Stake, (stake) => stake.hero)
+  stakes?: Stake[];
 }

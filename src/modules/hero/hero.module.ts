@@ -1,3 +1,5 @@
+import { HeroController } from '@/modules/hero/controllers/hero-controller';
+import { GetHero } from '@/modules/hero/use-cases/get-hero';
 import {
   GetHeroesByIds,
   HeroUpdateProcessor,
@@ -5,6 +7,6 @@ import {
 
 export const HeroModules = {
   imports: [],
-  controllers: [],
-  providers: [GetHeroesByIds, HeroUpdateProcessor],
+  controllers: [HeroController],
+  providers: [GetHeroesByIds, HeroUpdateProcessor, GetHero],
 };

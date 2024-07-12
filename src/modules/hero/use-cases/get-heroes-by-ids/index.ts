@@ -2,13 +2,14 @@ import { Hero } from '@/database/models/Hero';
 import { WalletNetwork } from '@/database/models/Wallet';
 import { HeroRepository } from '@/database/repositories/hero-repository';
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
-import { In } from 'typeorm';
+import { FindOptionsRelationByString, FindOptionsRelations, In } from 'typeorm';
 
 interface IGetHeroesByIds {
   network: WalletNetwork;
   ids: number[] | string[];
+  relations?: FindOptionsRelations<Hero> | FindOptionsRelationByString;
 }
 
 @Injectable()
@@ -18,34 +19,53 @@ export class GetHeroesByIds {
     @InjectQueue('hero-update') private readonly heroUpdate: Queue,
   ) {}
 
-  async execute({ network, ids }: IGetHeroesByIds) {
-    const idsNumber = ids.map((id) => Number(id));
+  async execute({ network, ids, relations }: IGetHeroesByIds) {
+    try {
+      const idsNumber = ids.map((id) => {
+        const value = Number(id);
 
-    let heroesDb = await this.heroRepository.find({
-      where: { id: In(idsNumber), network },
-    });
+        if (isNaN(value)) {
+          throw new BadRequestException('Invalid id');
+        }
 
-    const notIncluded = idsNumber.filter(
-      (id) => !heroesDb.map((hero) => hero.id).includes(id),
-    );
+        return value;
+      });
 
-    if (notIncluded.length > 0) {
-      const newHeroes = await this.heroRepository.updateHeroesFromIds(
-        notIncluded,
-        network,
+      let heroesDb = await this.heroRepository.find({
+        where: { id: In(idsNumber), network },
+        relations,
+      });
+
+      const notIncluded = idsNumber.filter(
+        (id) => !heroesDb.map((hero) => hero.id).includes(id),
       );
 
-      heroesDb = heroesDb.concat(newHeroes);
+      if (notIncluded.length > 0) {
+        const newHeroes = await this.heroRepository.updateHeroesFromIds(
+          notIncluded,
+          network,
+        );
+
+        heroesDb = heroesDb.concat(newHeroes);
+      }
+      this.checkUpdateHeroes(heroesDb, network);
+
+      return heroesDb;
+    } catch (e) {
+      console.log('e', e);
+      if (e.message.includes("Out of range value for column 'id' ")) {
+        throw new BadRequestException('Invalid id');
+      }
+
+      throw e;
     }
-
-    this.checkUpdateHeroes(heroesDb, network);
-
-    return heroesDb;
   }
 
   async checkUpdateHeroes(heroes: Hero[], network: WalletNetwork) {
     const heroesToUpdate = heroes.filter(
-      (hero) => hero.updatedAt < new Date(Date.now() - 1000 * 60 * 60 * 6),
+      (hero) =>
+        hero.updatedAt < new Date(Date.now() - 1000 * 60 * 60 * 6) &&
+        !hero.burned,
     );
 
     if (heroesToUpdate.length > 0) {

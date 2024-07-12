@@ -1,9 +1,12 @@
+import { Hero } from '@/database/models/Hero';
 import { WalletNetwork } from '@/database/models/Wallet';
 import 'reflect-metadata';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -40,4 +43,11 @@ export class StakeRankingHero {
 
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt!: Date;
+
+  @OneToOne(() => Hero, (hero) => hero.stakeRankingHero)
+  @JoinColumn([
+    { name: 'heroId', referencedColumnName: 'id' },
+    { name: 'network', referencedColumnName: 'network' },
+  ])
+  hero!: Hero;
 }

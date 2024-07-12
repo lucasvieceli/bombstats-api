@@ -1,9 +1,12 @@
+import { Hero } from '@/database/models/Hero';
 import { WalletNetwork } from '@/database/models/Wallet';
 import 'reflect-metadata';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -52,4 +55,11 @@ export class Stake {
 
   @Column({ type: 'varchar', nullable: false })
   hash!: string;
+
+  @ManyToOne(() => Hero, (hero) => hero.stakes)
+  @JoinColumn([
+    { name: 'heroId', referencedColumnName: 'id' },
+    { name: 'network', referencedColumnName: 'network' },
+  ])
+  hero!: Hero;
 }
