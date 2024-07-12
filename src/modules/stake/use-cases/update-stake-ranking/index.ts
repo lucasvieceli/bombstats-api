@@ -311,7 +311,8 @@ export class UpdateStakeRanking {
           .filter((transaction) => !existingHashes.has(transaction.hash))
           .map((transaction) => {
             const heroOwner = heroes.find(
-              (item) => item.hero.id == transaction.heroId,
+              (item) =>
+                item.hero.id.toString() == transaction.heroId.toString(),
             );
             if (!heroOwner) {
               return null;
@@ -372,7 +373,8 @@ export class UpdateStakeRanking {
           .filter((transaction) => !existingHashes.has(transaction.hash))
           .map((transaction) => {
             const heroOwner = heroes.find(
-              (item) => item.hero.id == transaction.heroId,
+              (item) =>
+                item.hero.id.toString() == transaction.heroId.toString(),
             );
             if (!heroOwner) {
               return null;

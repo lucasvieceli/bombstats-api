@@ -36,7 +36,7 @@ export class GetTopTwentyRarityHeroes {
 
     const heroesMap = list.heroes.map((hero) => ({
       ...hero,
-      hero: heroes.find(({ id }) => id.toString() === hero.heroId),
+      hero: heroes.find(({ id }) => id.toString() == hero.heroId.toString()),
     }));
     list.heroes = heroesMap;
 
