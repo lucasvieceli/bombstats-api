@@ -19,4 +19,34 @@ export class StakeRankingWalletRepository extends Repository<StakeRankingWallet>
       return wallet.position;
     }
   }
+
+  async getTopTwentyWalletStake(network: WalletNetwork) {
+    const [result, totalWallets] = await Promise.all([
+      this.find({
+        where: {
+          network,
+        },
+        order: {
+          position: 'ASC',
+        },
+        take: 20,
+      }),
+      this.count({
+        where: {
+          network,
+        },
+      }),
+    ]);
+    return {
+      wallets: result.map((item) => ({
+        amount: item.amount,
+        wallet: item.wallet,
+        position: item.position,
+      })),
+      amount: result.reduce((acc, item) => acc + item.amount, 0),
+      average:
+        result.reduce((acc, item) => acc + item.amount, 0) / totalWallets,
+      totalWallets,
+    };
+  }
 }

@@ -57,25 +57,29 @@ export class ClaimRankingWalletRepository extends Repository<ClaimRankingWallet>
   }
 
   async getTopTwentyWalletsLastWeek(token: ClaimToken, network: WalletNetwork) {
-    const result = await this.find({
-      where: {
-        token,
-        network,
-      },
-      order: {
-        position: 'ASC',
-      },
-      take: 20,
-    });
+    const [list, total] = await Promise.all([
+      this.find({
+        where: {
+          token,
+          network,
+        },
+        order: {
+          position: 'ASC',
+        },
+        take: 20,
+      }),
+      this.count({ where: { token, network } }),
+    ]);
     return {
-      wallets: result.map((item) => ({
+      wallets: list.map((item) => ({
         wallet: item.wallet,
         amount: item.amount,
         position: item.position,
         average: item.amount / 7,
       })),
-      amount: result.reduce((acc, item) => acc + item.amount, 0),
-      average: result.reduce((acc, item) => acc + item.amount, 0) / 7,
+      amount: list.reduce((acc, item) => acc + item.amount, 0),
+      average: list.reduce((acc, item) => acc + item.amount, 0) / 7,
+      totalWallets: total,
     };
   }
 }
