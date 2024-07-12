@@ -17,7 +17,6 @@ export class GetHero {
       ids: [id],
       relations: ['stakes', 'stakeRankingHero'],
     });
-    console.log('hero', hero);
 
     return hero;
   }
