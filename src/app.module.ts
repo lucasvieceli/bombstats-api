@@ -11,6 +11,8 @@ import { SocketGateway, SocketService } from '@/services/websocket';
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { HeroModules } from '@/modules/hero/hero.module';
+import { AlchemyService } from '@/services/alchemy';
+import { OpenSeayService } from '@/services/opeSea';
 
 @Module({
   imports: [
@@ -68,6 +70,8 @@ import { HeroModules } from '@/modules/hero/hero.module';
     ...HeroModules.providers,
     SocketGateway,
     SocketService,
+    // AlchemyService,
+    // OpenSeayService,
   ],
 })
 export class AppModule {}

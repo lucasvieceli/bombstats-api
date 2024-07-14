@@ -1,5 +1,4 @@
 import { Wallet, WalletNetwork } from '@/database/models/Wallet';
-import { MapBlockRepository } from '@/database/repositories/map-block-repository';
 import { MapRepository } from '@/database/repositories/map-repository';
 import { WalletRepository } from '@/database/repositories/wallet-repository';
 import { SocketService } from '@/services/websocket';
@@ -16,7 +15,6 @@ export class OnGetMapBlock {
   constructor(
     private mapRepository: MapRepository,
     private walletRepository: WalletRepository,
-    private mapBlockRepository: MapBlockRepository,
     private socketService: SocketService,
   ) {}
 
@@ -28,39 +26,12 @@ export class OnGetMapBlock {
 
     await this.createMap(walletEntity, additional);
 
-    const blocks = additional.blocks;
-
-    await this.createBlocks(walletEntity, blocks);
-    await this.socketService.emitEventCurrentMap(walletEntity, { blocks });
-  }
-
-  async createBlocks(walletEntity: Wallet, blocks: any) {
-    await this.mapBlockRepository.deleteFromWalletId(walletEntity.id);
-    this.mapBlockRepository.save(
-      blocks.map((block: any) => {
-        return {
-          wallet: walletEntity,
-          type: block.type,
-          i: block.i,
-          j: block.j,
-          maxHp: block.maxHp,
-          hp: block.hp,
-        };
-      }),
+    this.socketService.emitEventWallet(
+      'GET_BLOCK_MAP',
+      wallet,
+      network,
+      additional,
     );
-
-    // return Promise.all(
-    //   blocks.map(async (block: any) => {
-    //     this.mapBlockRepository.save({
-    //       wallet: walletEntity,
-    //       type: block.type,
-    //       i: block.i,
-    //       j: block.j,
-    //       maxHp: block.maxHp,
-    //       hp: block.hp,
-    //     });
-    //   }),
-    // );
   }
 
   async createMap(
@@ -68,9 +39,6 @@ export class OnGetMapBlock {
     additional: IOnGetMapBlock['additional'],
   ) {
     if (additional.reset) {
-      this.socketService.emitEventMapReward(walletEntity, {
-        resetMap: true,
-      });
       return await this.mapRepository.save({
         wallet: walletEntity,
       });

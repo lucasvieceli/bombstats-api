@@ -28,7 +28,6 @@ export class OnDisconnect {
     }
     await this.onStopPve.execute({ wallet, network });
 
-    walletEntity.online = WalletStatus.OFFLINE;
     await this.walletRepository.save(walletEntity);
   }
 }

@@ -3,6 +3,7 @@ import { FarmAverageRepository } from '@/database/repositories/farm-average-repo
 import { HeroRepository } from '@/database/repositories/hero-repository';
 import { StakeRepository } from '@/database/repositories/stake-repository';
 import { WalletRepository } from '@/database/repositories/wallet-repository';
+import { SocketService } from '@/services/websocket';
 import { validateEthereumAddress } from '@/utils/web3/check-wallet';
 import { getHousesFromGenIds } from '@/utils/web3/house';
 import { getWalletGenIds } from '@/utils/web3/wallet';
@@ -21,6 +22,7 @@ export class GetWallet {
     private farmAverageRepository: FarmAverageRepository,
     private stakeRepository: StakeRepository,
     private heroRepository: HeroRepository,
+    private socketService: SocketService,
   ) {}
   async execute({ wallet, network }: IGetWallet) {
     if (!validateEthereumAddress(wallet)) {
@@ -76,6 +78,7 @@ export class GetWallet {
 
     return {
       walletId: wallet,
+      online: this.socketService.walletConnected(wallet, network),
       wallet: walletEntity,
       heroes,
       houses,

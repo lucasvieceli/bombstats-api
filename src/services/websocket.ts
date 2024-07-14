@@ -1,6 +1,5 @@
-import { Wallet, WalletNetwork } from '@/database/models/Wallet';
-import { MapBlockRepository } from '@/database/repositories/map-block-repository';
-import { WalletRepository } from '@/database/repositories/wallet-repository';
+import { WalletNetwork } from '@/database/models/Wallet';
+import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import {
   OnGatewayConnection,
@@ -8,7 +7,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { randomUUID } from 'crypto';
+import { Queue } from 'bullmq';
 import { Socket } from 'socket.io';
 
 interface IWalletConnected {
@@ -16,34 +15,12 @@ interface IWalletConnected {
   network: string;
 }
 
-interface IEmitEventMapReward {
-  resetMap?: boolean;
-  cage?: boolean;
-  block?: {
-    type: number;
-    value: number;
-  };
-}
-
-interface IEmitEventMapUpdate {
-  blocks: {
-    hp: any;
-    i: any;
-    j: any;
-    rewards: {
-      type: number;
-      value: number;
-    }[];
-  }[];
-}
-
 @Injectable()
 export class SocketService {
   protected events: [string, any][] = [];
 
   constructor(
-    private mapBlockRepository: MapBlockRepository,
-    private walletRepository: WalletRepository,
+    @InjectQueue('extension-message') private readonly extensionMessage: Queue,
   ) {}
 
   private readonly connectedClients: Map<
@@ -53,10 +30,42 @@ export class SocketService {
       wallets?: IWalletConnected[];
     }
   > = new Map();
+  private readonly connectedExtension: Map<
+    string,
+    {
+      socket: Socket;
+      wallet: string;
+      network: string;
+    }
+  > = new Map();
 
   handleConnection(socket: Socket): void {
     const clientId = socket.id;
-    this.connectedClients.set(clientId, { socket, wallets: [] });
+
+    const params = socket.handshake.query;
+
+    if (params.extension) {
+      this.connectedExtension.set(
+        this.getIdSocketExtension(
+          params.wallet as string,
+          params.network as string,
+        ),
+        {
+          socket,
+          wallet: (params.wallet as string).toLowerCase(),
+          network: (params.network as string).toUpperCase(),
+        },
+      );
+    } else {
+      this.connectedClients.set(clientId, {
+        socket,
+        wallets: [],
+      });
+    }
+    console.log({
+      connectionsClients: this.connectedClients.size,
+      connectionsExtension: this.connectedExtension.size,
+    });
 
     socket.on('disconnect', () => {
       this.handleDisconnect(socket);
@@ -69,21 +78,16 @@ export class SocketService {
         socket,
         wallets: [...wallets, params],
       });
-      const wallet = await this.walletRepository.findOne({
-        where: {
-          walletId: params.wallet?.toLowerCase(),
-          network: params.network?.toUpperCase(),
-        },
-      });
 
-      if (
-        params.wallet.toLowerCase() ==
-        '0x5aae945cd56ee21ea3f63b6772fcd5e71713c2ee'.toLowerCase()
-      ) {
-        console.log('walletakiiii', wallet);
-      }
-      if (wallet) {
-        this.emitEventCurrentMap(wallet);
+      const socketExtension = this.connectedExtension.get(
+        this.getIdSocketExtension(params.wallet, params.network),
+      );
+
+      if (socketExtension) {
+        socketExtension.socket.emit('get-current-values', {
+          wallet: params.wallet,
+          network: params.network,
+        });
       }
     });
     socket.on('unlisten-listen-wallet', (params) => {
@@ -98,14 +102,30 @@ export class SocketService {
         ),
       });
     });
-
+    socket.on('extension', (params) => {
+      this.extensionMessage.add('extensionMessage', params);
+    });
     this.events.forEach(([name, fn]) => {
       socket.on(name, fn);
     });
   }
+
+  getIdSocketExtension(wallet: string, network: string) {
+    return `${wallet.toLowerCase()}-${network.toUpperCase()}`;
+  }
   handleDisconnect(socket: Socket): void {
-    const clientId = socket.id;
-    this.connectedClients.delete(clientId);
+    const params = socket.handshake.query;
+
+    if (params.extension) {
+      this.connectedExtension.delete(
+        this.getIdSocketExtension(
+          params.wallet as string,
+          params.network as string,
+        ),
+      );
+    } else {
+      this.connectedClients.delete(socket.id);
+    }
   }
   emitEventWallet(
     event: string,
@@ -122,40 +142,25 @@ export class SocketService {
             w.network.toUpperCase() === network.toUpperCase(),
         )
       ) {
-        socket.emit(event, data);
+        socket.emit(event, {
+          wallet,
+          network,
+          data,
+        });
       }
     });
   }
 
-  async emitEventCurrentMap(wallet: Wallet, mapParam?: any) {
-    let map = mapParam;
-    if (!mapParam) {
-      map = await this.mapBlockRepository.getCurrentMap(wallet.id);
-    }
-    this.emitEventWallet('current-map', wallet.walletId, wallet.network, {
-      wallet: wallet.walletId,
-      network: wallet.network,
-      map,
-    });
+  getTotalExtensionOnline(network: WalletNetwork): number {
+    return Array.from(this.connectedExtension.values()).filter(
+      (v) => v.network === network.toUpperCase(),
+    ).length;
   }
 
-  async emitEventMapUpdate(wallet: Wallet, value: IEmitEventMapUpdate) {
-    // const map = await this.mapBlockRepository.getCurrentMap(wallet.id);
-    this.emitEventWallet('map-update', wallet.walletId, wallet.network, {
-      wallet: wallet.walletId,
-      network: wallet.network,
-      value,
-    });
-  }
-
-  async emitEventMapReward(wallet: Wallet, params: IEmitEventMapReward) {
-    this.emitEventWallet('map-reward', wallet.walletId, wallet.network, {
-      wallet: wallet.walletId,
-      network: wallet.network,
-      createdAt: new Date().toISOString(),
-      id: randomUUID(),
-      ...params,
-    });
+  walletConnected(wallet: string, network: WalletNetwork): boolean {
+    return Boolean(
+      this.connectedExtension.get(this.getIdSocketExtension(wallet, network)),
+    );
   }
 
   addEventListeners(name: string, fn: any): void {

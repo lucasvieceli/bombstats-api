@@ -1,9 +1,6 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { GetDashboard } from '@/modules/extension/use-cases/get-dashboard';
-import { SocketService } from '@/services/websocket';
-import { InjectQueue } from '@nestjs/bullmq';
 import { Controller, Get, Param } from '@nestjs/common';
-import { Queue } from 'bullmq';
 
 export interface IBodyExtensionPost {
   wallet: string;
@@ -14,16 +11,7 @@ export interface IBodyExtensionPost {
 
 @Controller('extension')
 export class ExtensionController {
-  constructor(
-    private getDashboard: GetDashboard,
-    private socketService: SocketService,
-    @InjectQueue('extension-message') private readonly extensionMessage: Queue,
-  ) {
-    this.socketService.addEventListeners('extension', (params) =>
-      // this.onMessageExtension.execute(params),
-      this.extensionMessage.add('extensionMessage', params),
-    );
-  }
+  constructor(private getDashboard: GetDashboard) {}
   @Get('dashboard/:network')
   async dashboard(@Param('network') network: WalletNetwork) {
     return await this.getDashboard.execute({

@@ -58,11 +58,12 @@ export class OnMessageExtension extends WorkerHost {
       case 'GET_ACTIVE_BOMBER':
       case 'CHANGE_BBM_STAGE':
       case 'SYNC_BOMBERMAN':
-        this.socketService.emitEventWallet(message, wallet, network, {
+        this.socketService.emitEventWallet(
+          message,
           wallet,
           network,
-          value: additional,
-        });
+          additional,
+        );
         break;
 
       case 'GET_BLOCK_MAP':

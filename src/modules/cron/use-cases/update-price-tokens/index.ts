@@ -1,6 +1,7 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { TotalsRepository } from '@/database/repositories/totals-repository';
 import { WalletRepository } from '@/database/repositories/wallet-repository';
+import { SocketService } from '@/services/websocket';
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 
@@ -9,6 +10,7 @@ export class UpdatePriceTokens {
   constructor(
     private totalsRepository: TotalsRepository,
     private walletRepository: WalletRepository,
+    private socketService: SocketService,
   ) {}
 
   async execute() {
@@ -16,13 +18,16 @@ export class UpdatePriceTokens {
   }
 
   async updateExtension() {
-    const [installedPolygon, onlinePolygon, installedBsc, onlineBsc] =
-      await Promise.all([
-        this.walletRepository.getTotalInstalled(WalletNetwork.POLYGON),
-        this.walletRepository.getTotalOnline(WalletNetwork.POLYGON),
-        this.walletRepository.getTotalInstalled(WalletNetwork.BSC),
-        this.walletRepository.getTotalOnline(WalletNetwork.BSC),
-      ]);
+    const [installedPolygon, installedBsc] = await Promise.all([
+      this.walletRepository.getTotalInstalled(WalletNetwork.POLYGON),
+      this.walletRepository.getTotalInstalled(WalletNetwork.BSC),
+    ]);
+    const onlineBsc = this.socketService.getTotalExtensionOnline(
+      WalletNetwork.BSC,
+    );
+    const onlinePolygon = this.socketService.getTotalExtensionOnline(
+      WalletNetwork.POLYGON,
+    );
 
     await this.totalsRepository.insertOrUpdate(
       'extension-online',

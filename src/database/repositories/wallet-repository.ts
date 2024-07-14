@@ -59,7 +59,6 @@ export class WalletRepository extends Repository<Wallet> {
     }
 
     wallet.online = WalletStatus.ONLINE;
-    wallet.extensionInstalled = true;
     return await this.save(wallet);
   }
 
