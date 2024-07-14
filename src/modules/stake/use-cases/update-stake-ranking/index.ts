@@ -213,7 +213,9 @@ export class UpdateStakeRanking {
       );
     const heroesGroupedByWalletSortedByStakeDescArray = Object.entries(
       heroesGroupedByWallet,
-    ).sort((a, b) => b[1] - a[1]);
+    )
+      .sort((a, b) => b[1] - a[1])
+      .filter(([wallet, stake]) => wallet && stake > 0);
 
     await this.stakeRankingWalletRepository.save(
       heroesGroupedByWalletSortedByStakeDescArray.map(
