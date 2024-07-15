@@ -45,23 +45,6 @@ export class HeroRepository extends Repository<Hero> {
     return heroes;
   }
 
-  async updateHeroesFromIds(ids: number[], network: WalletNetwork) {
-    console.log('ids', ids);
-    const heroes = await getHeroesWithStakeOwnerFromIds(ids, network);
-
-    return await this.updateOrInsertArray(
-      heroes.map((hero) => {
-        return {
-          ...(hero.hero as unknown as Hero),
-          stake: hero.stake,
-          wallet: hero.owner,
-          updatedAt: new Date(),
-        };
-      }),
-      network,
-    );
-  }
-
   // async getHeroesFromIds(ids: number[] | string[], network: WalletNetwork) {
   //   const idsNumber = ids.map((id) => Number(id));
 

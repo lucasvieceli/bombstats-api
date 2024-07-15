@@ -1,6 +1,7 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { chunkArray } from '@/utils';
 import { ABI_HOUSE } from '@/utils/web3/ABI/house-abi';
+import { ABI_MARKET } from '@/utils/web3/ABI/market';
 import {
   getContractMultiCallBsc,
   getContractMultiCallPolygon,
@@ -90,6 +91,13 @@ function decodeBlockNumber(detailsBigInt: bigint) {
 export interface IHouseOwner {
   house: IHouse;
   owner: string;
+  market?: {
+    tokenDetail: number;
+    seller: string;
+    price: number;
+    startedAt: number;
+    tokenAddress: string;
+  };
 }
 
 export async function getHousesWithOwnerFromIds(
@@ -122,20 +130,30 @@ async function getHousesWithOwnerFromIdsFn(
       network === WalletNetwork.BSC
         ? process.env.CONTRACT_HOUSE_BSC
         : process.env.CONTRACT_HOUSE_POLYGON;
+    const contractAddressMarket =
+      network === WalletNetwork.BSC
+        ? process.env.CONTRACT_HOUSE_MARKET_BSC
+        : process.env.CONTRACT_HOUSE_MARKET_POLYGON;
 
     const contractHouse = new fnInstance.eth.Contract(
       ABI_HOUSE,
       contractAddressHouse,
     );
+    const contractMarket = new fnInstance.eth.Contract(
+      ABI_MARKET,
+      contractAddressMarket,
+    );
 
     const targets = [
       ...Array(ids.length).fill(contractAddressHouse),
       ...Array(ids.length).fill(contractAddressHouse),
+      ...Array(ids.length).fill(contractAddressMarket),
     ];
 
     const data = [
       ...ids.map((id) => contractHouse.methods.tokenDetails(id).encodeABI()),
       ...ids.map((id) => contractHouse.methods.ownerOf(id).encodeABI()),
+      ...ids.map((id) => contractMarket.methods.getOrderV2(id).encodeABI()),
     ];
 
     const result = (await fnContractMult.methods
@@ -151,9 +169,39 @@ async function getHousesWithOwnerFromIdsFn(
         : fnInstance.eth.abi.decodeParameter('address', r),
     );
 
+    const market = result.slice(ids.length * 2).map((r: any) => {
+      if (
+        r.includes(
+          '116f72646572206e6f742065786973746564000000000000000000000000000000',
+        )
+      ) {
+        return null;
+      }
+      const { tokenDetail, seller, price, startedAt, tokenAddress } =
+        fnInstance.eth.abi.decodeParameters(
+          [
+            { internalType: 'uint256', name: 'tokenDetail', type: 'uint256' },
+            { internalType: 'address', name: 'seller', type: 'address' },
+            { internalType: 'uint256', name: 'price', type: 'uint256' },
+            { internalType: 'uint256', name: 'startedAt', type: 'uint256' },
+            { internalType: 'address', name: 'tokenAddress', type: 'address' },
+          ],
+          r,
+        ) as any;
+      const divisor = 10n ** 18n;
+      return {
+        tokenDetail,
+        seller,
+        price: Number(price) / Number(divisor),
+        startedAt,
+        tokenAddress,
+      };
+    });
+
     return houses.map((item, index) => ({
       house: decodeHouse(item as number),
       owner: wallets[index] as string | null,
+      market: market[index],
     }));
   } catch (e) {
     if (isErrorRPC(e)) {

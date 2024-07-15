@@ -1,11 +1,8 @@
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { House } from '@/database/models/House';
 import { WalletNetwork } from '@/database/models/Wallet';
-import {
-  getHousesFromGenIds,
-  getHousesWithOwnerFromIds,
-} from '@/utils/web3/house';
+import { getHousesWithOwnerFromIds } from '@/utils/web3/house';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -46,46 +43,5 @@ export class HouseRepository extends Repository<House> {
     await this.upsert(houses, ['id', 'network']);
 
     return houses;
-  }
-
-  async updateHousesFromIds(ids: number[], network: WalletNetwork) {
-    const houses = await getHousesWithOwnerFromIds(ids, network);
-
-    return await this.updateOrInsertArray(
-      houses.map((house) => {
-        return {
-          ...(house.house as unknown as House),
-          wallet: house.owner,
-          updatedAt: new Date(),
-        };
-      }),
-      network,
-    );
-  }
-
-  async getHousesFromGenId(
-    genId: number[],
-    network: WalletNetwork,
-    wallet: string,
-  ) {
-    const cleanedGenId = genId.filter((id) => id != 0);
-
-    const housesDb = await this.find({
-      where: { genId: In(cleanedGenId), network },
-    });
-
-    if (housesDb.length === genId.length) {
-      return housesDb;
-    }
-
-    const houses = await getHousesFromGenIds(cleanedGenId);
-
-    return await this.updateOrInsertArray(
-      houses.map((house) => {
-        house.wallet = wallet;
-        return house as unknown as House;
-      }),
-      network,
-    );
   }
 }

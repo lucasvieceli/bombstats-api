@@ -1,6 +1,7 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { chunkArray } from '@/utils';
 import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
+import { ABI_MARKET } from '@/utils/web3/ABI/market';
 import { ABI_STAKE } from '@/utils/web3/ABI/stake-abi';
 import { getMultiCalls } from '@/utils/web3/multi-calls';
 import {
@@ -465,13 +466,20 @@ export interface IHeroStakeOwner {
   hero: IHero;
   owner: string;
   stake: number;
+  market?: {
+    tokenDetail: number;
+    seller: string;
+    price: number;
+    startedAt: number;
+    tokenAddress: string;
+  };
 }
 
 export async function getHeroesWithStakeOwnerFromIds(
   ids: number[],
   network: WalletNetwork,
 ) {
-  const chuncks = chunkArray<number>(ids, 300);
+  const chuncks = chunkArray<number>(ids, 200);
 
   let resultHeroes: IHeroStakeOwner[] = [];
   for (const ids of chuncks) {
@@ -501,6 +509,11 @@ async function getHeroesWithStakeOwnerFromIdsFn(
       network == WalletNetwork.POLYGON
         ? process.env.CONTRACT_STAKE_POLYGON
         : process.env.CONTRACT_STAKE_BSC;
+    const contractAddressMarket =
+      network === WalletNetwork.BSC
+        ? process.env.CONTRACT_HERO_MARKET_BSC
+        : process.env.CONTRACT_HERO_MARKET_POLYGON;
+
     const contractHero = new fnInstance.eth.Contract(
       ABI_HERO,
       contractAddressHero,
@@ -509,11 +522,16 @@ async function getHeroesWithStakeOwnerFromIdsFn(
       ABI_STAKE,
       contractAddressStake,
     );
+    const contractMarket = new fnInstance.eth.Contract(
+      ABI_MARKET,
+      contractAddressMarket,
+    );
 
     const targets = [
       ...Array(ids.length).fill(contractAddressHero),
       ...Array(ids.length).fill(contractAddressHero),
       ...Array(ids.length).fill(contractAddressStake),
+      ...Array(ids.length).fill(contractAddressMarket),
     ];
 
     const data = [
@@ -522,6 +540,7 @@ async function getHeroesWithStakeOwnerFromIdsFn(
       ...ids.map((id) =>
         contractStake.methods.getCoinBalancesByHeroId(id).encodeABI(),
       ),
+      ...ids.map((id) => contractMarket.methods.getOrderV2(id).encodeABI()),
     ];
 
     const result = (await fnContractMult.methods
@@ -542,6 +561,34 @@ async function getHeroesWithStakeOwnerFromIdsFn(
 
     const divisor = 10n ** 18n;
 
+    const market = result.slice(ids.length * 3).map((r: any) => {
+      if (
+        r.includes(
+          '116f72646572206e6f742065786973746564000000000000000000000000000000',
+        )
+      ) {
+        return null;
+      }
+      const { tokenDetail, seller, price, startedAt, tokenAddress } =
+        fnInstance.eth.abi.decodeParameters(
+          [
+            { internalType: 'uint256', name: 'tokenDetail', type: 'uint256' },
+            { internalType: 'address', name: 'seller', type: 'address' },
+            { internalType: 'uint256', name: 'price', type: 'uint256' },
+            { internalType: 'uint256', name: 'startedAt', type: 'uint256' },
+            { internalType: 'address', name: 'tokenAddress', type: 'address' },
+          ],
+          r,
+        ) as any;
+      return {
+        tokenDetail,
+        seller,
+        price: Number(price) / Number(divisor),
+        startedAt,
+        tokenAddress,
+      };
+    });
+
     return await Promise.all(
       heroes.map(async (item, index) => ({
         hero: await decodeHero(
@@ -551,9 +598,11 @@ async function getHeroesWithStakeOwnerFromIdsFn(
         ),
         owner: wallets[index] as string | null,
         stake: Number((stakes[index] as any) / divisor),
+        market: market[index],
       })),
     );
   } catch (e) {
+    console.log('e akiii', e);
     if (isErrorRPC(e)) {
       return getHeroesWithStakeOwnerFromIdsFn(ids, network);
     }

@@ -5,6 +5,7 @@ import {
   HeroUpdateProcessor,
 } from '@/modules/hero/use-cases/get-heroes-by-ids';
 import { GetHeroesFromWallet } from '@/modules/hero/use-cases/get-heroes-from-wallet';
+import { UpdateHeroesById } from '@/modules/hero/use-cases/update-heroes-by-id';
 
 export const HeroModules = {
   imports: [],
@@ -14,5 +15,6 @@ export const HeroModules = {
     HeroUpdateProcessor,
     GetHero,
     GetHeroesFromWallet,
+    UpdateHeroesById,
   ],
 };

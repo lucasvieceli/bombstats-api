@@ -1,11 +1,11 @@
 import { Hero } from '@/database/models/Hero';
 import { WalletNetwork } from '@/database/models/Wallet';
-import { HeroRepository } from '@/database/repositories/hero-repository';
 import { StakeRankingHeroRepository } from '@/database/repositories/stake-ranking-hero';
 import { StakeRankingWalletRepository } from '@/database/repositories/stake-ranking-wallet';
 import { StakeRepository } from '@/database/repositories/stake-repository';
 import { TotalsRepository } from '@/database/repositories/totals-repository';
 import { WalletRepository } from '@/database/repositories/wallet-repository';
+import { UpdateHeroesById } from '@/modules/hero/use-cases/update-heroes-by-id';
 import { chunkArray, executePromisesBlock } from '@/utils';
 import { IHero, getHeroesWithStakeOwnerFromIds } from '@/utils/web3/hero';
 import { Injectable, Logger } from '@nestjs/common';
@@ -58,8 +58,8 @@ export class UpdateStakeRanking {
     private stakeRankingHeroRepository: StakeRankingHeroRepository,
     private stakeRankingWalletRepository: StakeRankingWalletRepository,
     private totalsRepository: TotalsRepository,
-    private heroRepository: HeroRepository,
     private walletRepository: WalletRepository,
+    private updateHeroesById: UpdateHeroesById,
   ) {}
   async execute({ network }: IUpdateStakeRanking) {
     // await this.stakeRepository.delete({ network });
@@ -134,7 +134,7 @@ export class UpdateStakeRanking {
   }
 
   async insertRankingRarityHero(
-    heroes: IHeroWallet[],
+    heroes: Hero[],
     network: WalletNetwork,
     rarity: number,
   ) {
@@ -144,17 +144,17 @@ export class UpdateStakeRanking {
     });
 
     const heroesGroupedByRarity = heroes
-      .filter((hero) => !hero.hero.burned && hero.hero.rarityIndex == rarity)
+      .filter((hero) => !hero.burned && hero.rarityIndex == rarity)
       .reduce(
         (acc, hero) => {
-          if (!acc[hero.hero.id]) {
-            acc[hero.hero.id] = {
+          if (!acc[hero.id]) {
+            acc[hero.id] = {
               stake: 0,
               owner: '',
             };
           }
-          acc[hero.hero.id]['stake'] += hero.stake;
-          acc[hero.hero.id]['owner'] = hero.owner;
+          acc[hero.id]['stake'] += hero.stake;
+          acc[hero.id]['owner'] = hero.wallet;
           return acc;
         },
         {} as Record<number, { stake: number; owner: string }>,
@@ -194,19 +194,19 @@ export class UpdateStakeRanking {
     // );
   }
 
-  async insertRankingWallet(heroes: IHeroWallet[], network: WalletNetwork) {
+  async insertRankingWallet(heroes: Hero[], network: WalletNetwork) {
     await this.stakeRankingWalletRepository.delete({
       network,
     });
 
     const heroesGroupedByWallet = heroes
-      .filter((wallet) => wallet.owner)
+      .filter((wallet) => wallet.wallet)
       .reduce(
         (acc, hero) => {
-          if (!acc[hero.owner]) {
-            acc[hero.owner] = 0;
+          if (!acc[hero.wallet]) {
+            acc[hero.wallet] = 0;
           }
-          acc[hero.owner] += hero.stake;
+          acc[hero.wallet] += hero.stake;
           return acc;
         },
         {} as Record<string, number>,
@@ -266,27 +266,30 @@ export class UpdateStakeRanking {
   async updateHeroes(network: WalletNetwork) {
     const heroIds = await this.stakeRepository.getHeroes(network);
 
-    const heroes = await getHeroesWithStakeOwnerFromIds(
-      heroIds.map((h) => h.heroId),
+    // const heroes = await getHeroesWithStakeOwnerFromIds(
+    //   heroIds.map((h) => h.heroId),
+    //   network,
+    // );
+    // //count time to finish
+    // const chunks = chunkArray<IHeroWallet>(heroes, 1000);
+
+    // for (const chunk of chunks) {
+    //   await this.heroRepository.updateOrInsertArray(
+    //     chunk.map(
+    //       (hero) =>
+    //         ({
+    //           ...hero.hero,
+    //           wallet: hero.owner,
+    //         }) as unknown as Hero,
+    //     ),
+    //     network,
+    //   );
+    // }
+
+    return await this.updateHeroesById.execute({
       network,
-    );
-    //count time to finish
-    const chunks = chunkArray<IHeroWallet>(heroes, 1000);
-
-    for (const chunk of chunks) {
-      await this.heroRepository.updateOrInsertArray(
-        chunk.map(
-          (hero) =>
-            ({
-              ...hero.hero,
-              wallet: hero.owner,
-            }) as unknown as Hero,
-        ),
-        network,
-      );
-    }
-
-    return heroes;
+      ids: heroIds.map((h) => h.heroId),
+    });
   }
 
   async withdrawStake(

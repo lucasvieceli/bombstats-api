@@ -4,6 +4,7 @@ import { UpdateClaimRanking } from '@/modules/claim/use-cases/update-claim-ranki
 import { UpdateStakeRanking } from '@/modules/stake/use-cases/update-stake-ranking';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
+import * as Sentry from '@sentry/nestjs';
 
 @Processor('cron-every-hour', { concurrency: 1 })
 export class CronEveryHour extends WorkerHost {
@@ -27,8 +28,11 @@ export class CronEveryHour extends WorkerHost {
         network: WalletNetwork.BSC,
         token: ClaimToken.BCOIN,
       });
+
+      Logger.log('terminou job EVERY_HOUR');
     } catch (e) {
       Logger.error(`${e.message} EVERY_HOUR`);
+      Sentry.captureException(e);
     }
   }
 }

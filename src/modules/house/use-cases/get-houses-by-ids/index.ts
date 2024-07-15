@@ -1,6 +1,7 @@
 import { House } from '@/database/models/House';
 import { WalletNetwork } from '@/database/models/Wallet';
 import { HouseRepository } from '@/database/repositories/house-repository';
+import { UpdateHousesById } from '@/modules/house/use-cases/update-houses-by-id';
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
@@ -16,6 +17,7 @@ interface IGetHousesByIds {
 export class GetHousesByIds {
   constructor(
     private houseRepository: HouseRepository,
+    private updateHousesById: UpdateHousesById,
     @InjectQueue('house-update') private readonly houseUpdate: Queue,
   ) {}
 
@@ -41,11 +43,10 @@ export class GetHousesByIds {
       );
 
       if (notIncluded.length > 0) {
-        const newHouses = await this.houseRepository.updateHousesFromIds(
-          notIncluded,
+        const newHouses = await this.updateHousesById.execute({
+          ids: notIncluded,
           network,
-        );
-
+        });
         housesDb = housesDb.concat(newHouses);
       }
       this.checkUpdateHouses(housesDb, network);
@@ -77,7 +78,7 @@ export class GetHousesByIds {
 
 @Processor('house-update', { concurrency: 2 })
 export class HouseUpdateProcessor extends WorkerHost {
-  constructor(private houseRepository: HouseRepository) {
+  constructor(private updateHousesById: UpdateHousesById) {
     super();
   }
 
@@ -86,10 +87,10 @@ export class HouseUpdateProcessor extends WorkerHost {
   ): Promise<any> {
     Logger.log('house update');
     try {
-      await this.houseRepository.updateHousesFromIds(
-        data.data.houses,
-        data.data.network,
-      );
+      await this.updateHousesById.execute({
+        ids: data.data.houses,
+        network: data.data.network,
+      });
     } catch (e) {
       Logger.error(e);
     }

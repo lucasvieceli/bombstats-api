@@ -5,6 +5,7 @@ import {
   HouseUpdateProcessor,
 } from '@/modules/house/use-cases/get-houses-by-ids';
 import { GetHousesFromWallet } from '@/modules/house/use-cases/get-houses-from-wallet';
+import { UpdateHousesById } from '@/modules/house/use-cases/update-houses-by-id';
 
 export const HouseModules = {
   imports: [],
@@ -14,5 +15,6 @@ export const HouseModules = {
     HouseUpdateProcessor,
     GetHouse,
     GetHousesFromWallet,
+    UpdateHousesById,
   ],
 };

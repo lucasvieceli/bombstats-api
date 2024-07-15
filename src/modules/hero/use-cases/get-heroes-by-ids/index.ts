@@ -1,6 +1,7 @@
 import { Hero } from '@/database/models/Hero';
 import { WalletNetwork } from '@/database/models/Wallet';
 import { HeroRepository } from '@/database/repositories/hero-repository';
+import { UpdateHeroesById } from '@/modules/hero/use-cases/update-heroes-by-id';
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Job, Queue } from 'bullmq';
@@ -16,6 +17,7 @@ interface IGetHeroesByIds {
 export class GetHeroesByIds {
   constructor(
     private heroRepository: HeroRepository,
+    private updateHeroesById: UpdateHeroesById,
     @InjectQueue('hero-update') private readonly heroUpdate: Queue,
   ) {}
 
@@ -41,10 +43,10 @@ export class GetHeroesByIds {
       );
 
       if (notIncluded.length > 0) {
-        const newHeroes = await this.heroRepository.updateHeroesFromIds(
-          notIncluded,
+        const newHeroes = await this.updateHeroesById.execute({
+          ids: notIncluded,
           network,
-        );
+        });
 
         heroesDb = heroesDb.concat(newHeroes);
       }
@@ -79,7 +81,7 @@ export class GetHeroesByIds {
 
 @Processor('hero-update', { concurrency: 2 })
 export class HeroUpdateProcessor extends WorkerHost {
-  constructor(private heroRepository: HeroRepository) {
+  constructor(private updateHeroesById: UpdateHeroesById) {
     super();
   }
 
@@ -88,10 +90,10 @@ export class HeroUpdateProcessor extends WorkerHost {
   ): Promise<any> {
     Logger.log('hero update');
     try {
-      await this.heroRepository.updateHeroesFromIds(
-        data.data.heroes,
-        data.data.network,
-      );
+      await this.updateHeroesById.execute({
+        ids: data.data.heroes,
+        network: data.data.network,
+      });
     } catch (e) {
       Logger.error(e);
     }

@@ -12,7 +12,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { HeroModules } from '@/modules/hero/hero.module';
 import { AlchemyService } from '@/services/alchemy';
-import { OpenSeayService } from '@/services/opeSea';
+import { OpenSeaService } from '@/services/opeSea';
 import { HouseModules } from '@/modules/house/house.module';
 
 @Module({
@@ -82,7 +82,7 @@ import { HouseModules } from '@/modules/house/house.module';
     SocketGateway,
     SocketService,
     // AlchemyService,
-    OpenSeayService,
+    OpenSeaService,
   ],
 })
 export class AppModule {}
