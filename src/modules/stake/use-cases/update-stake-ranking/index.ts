@@ -144,7 +144,9 @@ export class UpdateStakeRanking {
     });
 
     const heroesGroupedByRarity = heroes
-      .filter((hero) => !hero.burned && hero.rarityIndex == rarity)
+      .filter(
+        (hero) => !hero.burned && hero.rarityIndex == rarity && hero.stake > 0,
+      )
       .reduce(
         (acc, hero) => {
           if (!acc[hero.id]) {
