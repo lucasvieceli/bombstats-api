@@ -9,7 +9,9 @@ export class CronService {
   constructor(
     private updatePriceTokens: UpdatePriceTokens,
     @InjectQueue('cron-every-hour') private readonly cronEveryHour: Queue,
-  ) {}
+  ) {
+    this.handleCron();
+  }
 
   @Cron(CronExpression.EVERY_HOUR)
   async handleCron() {
