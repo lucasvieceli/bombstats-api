@@ -13,6 +13,7 @@ import { WalletRepository } from '@/database/repositories/wallet-repository';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import dataSource from './config';
 import { FarmAverageRepository } from '@/database/repositories/farm-average-repository';
+import { HouseRepository } from '@/database/repositories/house-repository';
 
 export const DatabaseModuleRoot = TypeOrmModule.forRoot(
   dataSource as TypeOrmModuleOptions,
@@ -33,5 +34,6 @@ export const DatabaseModules = {
     TotalsRepository,
     HeroRepository,
     FarmAverageRepository,
+    HouseRepository,
   ],
 };

@@ -1,11 +1,8 @@
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 
 import { Hero } from '@/database/models/Hero';
 import { WalletNetwork } from '@/database/models/Wallet';
-import {
-  getHeroesFromGenIds,
-  getHeroesWithStakeOwnerFromIds,
-} from '@/utils/web3/hero';
+import { getHeroesWithStakeOwnerFromIds } from '@/utils/web3/hero';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -49,6 +46,7 @@ export class HeroRepository extends Repository<Hero> {
   }
 
   async updateHeroesFromIds(ids: number[], network: WalletNetwork) {
+    console.log('ids', ids);
     const heroes = await getHeroesWithStakeOwnerFromIds(ids, network);
 
     return await this.updateOrInsertArray(
@@ -85,30 +83,4 @@ export class HeroRepository extends Repository<Hero> {
 
   //   return heroesDb;
   // }
-
-  async getHeroesFromGenId(
-    genId: number[],
-    network: WalletNetwork,
-    wallet: string,
-  ) {
-    const cleanedGenId = genId.filter((id) => id != 0);
-
-    const heroesDb = await this.find({
-      where: { genId: In(cleanedGenId), network },
-    });
-
-    if (heroesDb.length === genId.length) {
-      return heroesDb;
-    }
-
-    const heroes = await getHeroesFromGenIds(cleanedGenId, network);
-
-    return await this.updateOrInsertArray(
-      heroes.map((hero) => {
-        hero.wallet = wallet;
-        return hero as unknown as Hero;
-      }),
-      network,
-    );
-  }
 }

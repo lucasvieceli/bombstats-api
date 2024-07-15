@@ -21,7 +21,6 @@ export class MapRewardRepository extends Repository<MapReward> {
     while (true) {
       if (this.insertBuffer.length > 0) {
         const bufferCopy = this.insertBuffer.slice();
-        console.log('bufferCopy insert', bufferCopy.length);
         this.insertBuffer = [];
 
         const queryRunner = this.dataSource.createQueryRunner();

@@ -28,7 +28,7 @@ export class CronEveryHour extends WorkerHost {
         token: ClaimToken.BCOIN,
       });
     } catch (e) {
-      Logger.error(e);
+      Logger.error(`${e.message} EVERY_HOUR`);
     }
   }
 }

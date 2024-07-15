@@ -13,6 +13,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { HeroModules } from '@/modules/hero/hero.module';
 import { AlchemyService } from '@/services/alchemy';
 import { OpenSeayService } from '@/services/opeSea';
+import { HouseModules } from '@/modules/house/house.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { OpenSeayService } from '@/services/opeSea';
     ...ClaimModules.imports,
     ...CronModules.imports,
     ...HeroModules.imports,
+    ...HouseModules.imports,
     BullModule.forRoot({
       connection: {
         host: 'localhost',
@@ -46,6 +48,13 @@ import { OpenSeayService } from '@/services/opeSea';
       },
     }),
     BullModule.registerQueue({
+      name: 'house-update',
+      defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    }),
+    BullModule.registerQueue({
       name: 'cron-every-hour',
       defaultJobOptions: {
         removeOnComplete: true,
@@ -59,6 +68,7 @@ import { OpenSeayService } from '@/services/opeSea';
     ...StakeModules.controllers,
     ...ClaimModules.controllers,
     ...HeroModules.controllers,
+    ...HouseModules.controllers,
   ],
   providers: [
     ...DatabaseModules.providers,
@@ -68,10 +78,11 @@ import { OpenSeayService } from '@/services/opeSea';
     ...ClaimModules.providers,
     ...CronModules.providers,
     ...HeroModules.providers,
+    ...HouseModules.providers,
     SocketGateway,
     SocketService,
     // AlchemyService,
-    // OpenSeayService,
+    OpenSeayService,
   ],
 })
 export class AppModule {}

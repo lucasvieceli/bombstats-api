@@ -1,11 +1,12 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { FarmAverageRepository } from '@/database/repositories/farm-average-repository';
-import { HeroRepository } from '@/database/repositories/hero-repository';
+import { HouseRepository } from '@/database/repositories/house-repository';
 import { StakeRepository } from '@/database/repositories/stake-repository';
 import { WalletRepository } from '@/database/repositories/wallet-repository';
+import { GetHeroesFromWallet } from '@/modules/hero/use-cases/get-heroes-from-wallet';
+import { GetHousesFromWallet } from '@/modules/house/use-cases/get-houses-from-wallet';
 import { SocketService } from '@/services/websocket';
 import { validateEthereumAddress } from '@/utils/web3/check-wallet';
-import { getHousesFromGenIds } from '@/utils/web3/house';
 import { getWalletGenIds } from '@/utils/web3/wallet';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { differenceInHours } from 'date-fns';
@@ -21,8 +22,10 @@ export class GetWallet {
     private walletRepository: WalletRepository,
     private farmAverageRepository: FarmAverageRepository,
     private stakeRepository: StakeRepository,
-    private heroRepository: HeroRepository,
     private socketService: SocketService,
+    private houseRepository: HouseRepository,
+    private getHeroesFromWallet: GetHeroesFromWallet,
+    private getHousesFromWallet: GetHousesFromWallet,
   ) {}
   async execute({ wallet, network }: IGetWallet) {
     if (!validateEthereumAddress(wallet)) {
@@ -67,8 +70,16 @@ export class GetWallet {
     }
 
     const [heroes, houses, averageFarm, stakes] = await Promise.all([
-      this.heroRepository.getHeroesFromGenId(genIds.heroes, network, wallet),
-      getHousesFromGenIds(genIds.houses),
+      this.getHeroesFromWallet.execute({
+        genIds: genIds.heroes,
+        network,
+        wallet,
+      }),
+      this.getHousesFromWallet.execute({
+        genIds: genIds.houses,
+        network,
+        wallet,
+      }),
       new Promise((resolve) => {
         resolve(null);
       }),

@@ -30,12 +30,12 @@ interface Transaction {
 }
 
 const contractPolygon: Record<ClaimToken, string> = {
-  [ClaimToken.BCOIN]: '0xb2c63830d4478cb331142fac075a39671a5541dc',
-  [ClaimToken.SEN]: '0xfe302b8666539d5046cd9aa0707bb327f5f94c22',
+  [ClaimToken.BCOIN]: process.env.CONTRACT_BOMB_POLYGON!,
+  [ClaimToken.SEN]: process.env.CONTRACT_SEN_POLYGON!,
 };
 const contractBSC: Record<ClaimToken, string> = {
-  [ClaimToken.BCOIN]: '0x00e1656e45f18ec6747f5a8496fd39b50b38396d',
-  [ClaimToken.SEN]: '0xfe302b8666539d5046cd9aa0707bb327f5f94c22',
+  [ClaimToken.BCOIN]: process.env.CONTRACT_BOMB_BSC!,
+  [ClaimToken.SEN]: process.env.CONTRACT_SEN_BSC!,
 };
 
 interface IUpdateClaimRanking {

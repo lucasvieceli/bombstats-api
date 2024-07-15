@@ -116,4 +116,13 @@ export class Hero {
 
   @OneToMany(() => Stake, (stake) => stake.hero)
   stakes?: Stake[];
+
+  @Column({ type: 'float', nullable: false })
+  marketPrice!: number;
+
+  @Column({ type: 'varchar', nullable: false })
+  marketToken!: string;
+
+  @Column({ type: 'float', nullable: false })
+  openSeaPrice!: number;
 }

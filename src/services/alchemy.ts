@@ -43,16 +43,15 @@ export class AlchemyService {
     this.alchemyPolygon.ws.on(
       {
         method: 'alchemy_minedTransactions',
-        fromAddress: '0xf3a7195920519f8a22cdf84ebb9f74342abe9812',
       },
       (res) => {
-        if (res.from == '0xf3a7195920519f8a22cdf84ebb9f74342abe9812') {
+        if (res.from == process.env.CONTRACT_HERO_MARKET_POLYGON!) {
           if (res.transaction.input.startsWith('0x23b70d76')) {
             console.log('hero listed ', res);
           } else if (res.transaction.input.startsWith('0xd6febde8')) {
             console.log('hero sold ', res);
           }
-        } else if (res.from == '0xBb5966daF83ec4D3f168671a464EB18430EeA3be') {
+        } else if (res.from == process.env.CONTRACT_HOUSE_MARKET_POLYGON!) {
           if (res.transaction.input.startsWith('0x23b70d76')) {
             console.log('house listed ', res);
           } else if (res.transaction.input.startsWith('0xd6febde8')) {

@@ -43,7 +43,6 @@ export class MapBlockRepository extends Repository<MapBlock> {
     while (true) {
       if (this.updateBuffer.length > 0) {
         const bufferCopy = this.updateBuffer.slice();
-        console.log('bufferCopy', bufferCopy.length);
         this.updateBuffer = [];
 
         const queryRunner = this.dataSource.createQueryRunner();

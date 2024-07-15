@@ -10,7 +10,7 @@ export class CronService {
     private updatePriceTokens: UpdatePriceTokens,
     @InjectQueue('cron-every-hour') private readonly cronEveryHour: Queue,
   ) {
-    // this.cronEveryHour.add('cronEveryHour', '');
+    this.cronEveryHour.add('cronEveryHour', '');
   }
 
   @Cron(CronExpression.EVERY_HOUR)
