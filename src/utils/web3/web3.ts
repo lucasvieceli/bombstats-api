@@ -62,6 +62,7 @@ export const ERRORS_RPC = [
   'reason: Unexpected token O in JSON at',
   'reason: getaddrinfo ENOTFOUND',
   'reason: connect ECONNREFUSED',
+  'reason: read ECONNRESET',
   'Unexpected token < in JSON at position 0',
   'did it run Out of Gas?',
 ];

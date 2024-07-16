@@ -4,7 +4,7 @@ import { Network, OpenSeaStreamClient } from '@opensea/stream-js';
 import axios from 'axios';
 import { WebSocket } from 'ws';
 
-const API_KEY = 'e05f9f908e7b4722a7bc6e36c3ffc8b0';
+const API_KEY = process.env.OPEN_SEA_KEY!;
 
 @Injectable()
 export class OpenSeaService {
