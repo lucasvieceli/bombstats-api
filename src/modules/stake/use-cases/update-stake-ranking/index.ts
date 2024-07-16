@@ -33,7 +33,7 @@ interface Transaction {
   confirmations: string;
   methodId: string;
   functionName: string;
-  heroId?: number;
+  heroId?: string;
   stake: number;
   hero?: IHero;
 }
@@ -62,7 +62,6 @@ export class UpdateStakeRanking {
     private updateHeroesById: UpdateHeroesById,
   ) {}
   async execute({ network }: IUpdateStakeRanking) {
-    // await this.stakeRepository.delete({ network });
     let transactions;
     const defaultBlock = 0;
     const lastBlockNumber =
@@ -73,13 +72,13 @@ export class UpdateStakeRanking {
         })
       )?.blockNumber ?? defaultBlock;
 
-    Logger.log('buscando transacoes ' + network);
+    Logger.debug('buscando transacoes ' + network, 'UpdateStakeRanking');
     if (network == WalletNetwork.BSC) {
       transactions = await this.getTransactionsBSC(lastBlockNumber);
     } else {
       transactions = await this.getTransactionsPolygon(lastBlockNumber);
     }
-    Logger.log(`transactions ${transactions.length}`);
+    Logger.debug(`transactions ${transactions.length}`, 'UpdateStakeRanking');
     const deposited = transactions
       .filter((transaction) => transaction.functionName == DEPOSIT_METHOD)
       .map(this.parseHeroAndStake);
@@ -92,29 +91,28 @@ export class UpdateStakeRanking {
       [...deposited, ...withdraws],
       network,
     );
-    console.log('newHeroes', newHeroes.length);
-    Logger.log(`newHeroes ${newHeroes.length}`);
+    Logger.debug(`newHeroes ${newHeroes.length}`, 'UpdateStakeRanking');
 
     await this.insertDeposit(deposited, network, newHeroes);
 
     await this.withdrawStake(withdraws, network, newHeroes);
-    Logger.log(`atualizando heroes`);
+    Logger.debug(`atualizando heroes`, 'UpdateStakeRanking');
     const allHeroes = await this.updateHeroes(network);
-    Logger.log(`allHeroes ${allHeroes.length}`);
+    Logger.debug(`allHeroes ${allHeroes.length}`, 'UpdateStakeRanking');
     const amount = allHeroes.reduce((acc, item) => acc + item.stake, 0);
 
-    Logger.log(`criando wallets heroes`);
+    Logger.debug(`criando wallets heroes`, 'UpdateStakeRanking');
     await this.createWallets([...deposited, ...withdraws], network);
-    Logger.log(`atualizando ranking wallet`);
+    Logger.debug(`atualizando ranking wallet`, 'UpdateStakeRanking');
     await this.insertRankingWallet(allHeroes, network);
-    Logger.log(`atualizando ranking heroes`);
+    Logger.debug(`atualizando ranking heroes`, 'UpdateStakeRanking');
     await this.insertRankingRarityHero(allHeroes, network, 0);
     await this.insertRankingRarityHero(allHeroes, network, 1);
     await this.insertRankingRarityHero(allHeroes, network, 2);
     await this.insertRankingRarityHero(allHeroes, network, 3);
     await this.insertRankingRarityHero(allHeroes, network, 4);
     await this.insertRankingRarityHero(allHeroes, network, 5);
-    Logger.log(`atualizando totais`);
+    Logger.debug(`atualizando totais`, 'UpdateStakeRanking');
     await this.totalsRepository.insertOrUpdate(
       'stake-amount',
       amount.toString(),
@@ -130,7 +128,10 @@ export class UpdateStakeRanking {
       (amount / allHeroes.length).toString(),
       network,
     );
-    Logger.log(`Terminou UpdateStakeRanking ${network}`);
+    Logger.debug(
+      `Terminou UpdateStakeRanking ${network}`,
+      'UpdateStakeRanking',
+    );
   }
 
   async insertRankingRarityHero(
@@ -267,26 +268,6 @@ export class UpdateStakeRanking {
 
   async updateHeroes(network: WalletNetwork) {
     const heroIds = await this.stakeRepository.getHeroes(network);
-
-    // const heroes = await getHeroesWithStakeOwnerFromIds(
-    //   heroIds.map((h) => h.heroId),
-    //   network,
-    // );
-    // //count time to finish
-    // const chunks = chunkArray<IHeroWallet>(heroes, 1000);
-
-    // for (const chunk of chunks) {
-    //   await this.heroRepository.updateOrInsertArray(
-    //     chunk.map(
-    //       (hero) =>
-    //         ({
-    //           ...hero.hero,
-    //           wallet: hero.owner,
-    //         }) as unknown as Hero,
-    //     ),
-    //     network,
-    //   );
-    // }
 
     return await this.updateHeroesById.execute({
       network,

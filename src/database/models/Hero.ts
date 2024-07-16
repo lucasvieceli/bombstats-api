@@ -14,8 +14,10 @@ import {
 
 @Entity('hero')
 export class Hero {
-  @PrimaryColumn()
-  id!: number;
+  @PrimaryColumn({
+    type: 'varchar',
+  })
+  id!: string;
 
   @PrimaryColumn({
     type: 'enum',

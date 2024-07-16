@@ -3,7 +3,6 @@ import { ABI_MARKET } from '@/utils/web3/ABI/market';
 import { getRpcWeb3 } from '@/utils/web3/web3';
 
 export function decodeInputCreateOrder(inputData: string) {
-  console.log('inputData', inputData);
   const method = ABI_MARKET.find((item) => item.name === 'createOrder');
   if (!method) {
     throw new Error('Method createOrder not found in ABI');
@@ -26,7 +25,6 @@ export function decodeInputCreateOrder(inputData: string) {
 }
 
 export function decodeInputBuy(inputData: string) {
-  console.log('inputData', inputData);
   const method = ABI_MARKET.find((item) => item.name === 'buy');
   if (!method) {
     throw new Error('Method buy not found in ABI');

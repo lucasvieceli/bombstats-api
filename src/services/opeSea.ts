@@ -95,7 +95,6 @@ export class OpenSeaService {
       console.log(e, nfts.length);
     }
 
-    console.log('terminou');
     return nfts;
   }
 }

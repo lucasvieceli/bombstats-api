@@ -16,7 +16,7 @@ export class CronEveryHour extends WorkerHost {
   }
 
   async process(): Promise<any> {
-    Logger.log('Cron job EVERY_HOUR');
+    Logger.debug('Cron job EVERY_HOUR', 'EVERY_HOUR');
     try {
       await this.updateStakeRanking.execute({ network: WalletNetwork.POLYGON });
       await this.updateStakeRanking.execute({ network: WalletNetwork.BSC });
@@ -29,7 +29,7 @@ export class CronEveryHour extends WorkerHost {
         token: ClaimToken.BCOIN,
       });
 
-      Logger.log('terminou job EVERY_HOUR');
+      Logger.debug('terminou job EVERY_HOUR', 'EVERY_HOUR');
     } catch (e) {
       Logger.error(`${e.message} EVERY_HOUR`);
       Sentry.captureException(e);

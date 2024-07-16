@@ -7,7 +7,7 @@ import { Injectable } from '@nestjs/common';
 
 interface IUpdateHeroesById {
   network: WalletNetwork;
-  ids: number[];
+  ids: string[];
 }
 
 @Injectable()

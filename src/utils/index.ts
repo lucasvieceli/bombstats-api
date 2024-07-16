@@ -1,3 +1,5 @@
+import { Logger } from '@nestjs/common';
+
 export function chunkArray<T>(array: any[], chunkSize: number) {
   const chunks: T[][] = [];
   for (let i = 0; i < array.length; i += chunkSize) {
@@ -20,8 +22,9 @@ export const executePromisesBlock = async (
 
     for (let i = 0; i < division; i++) {
       traveled = i * amount;
-      console.log(
-        `${log} executing ${amount} promises chunk ${i + 1}/${division}`,
+      Logger.debug(
+        `executing ${amount} promises chunk ${i + 1}/${division}`,
+        log,
       );
       const promisesAux = promises
         .slice(traveled, traveled + amount)

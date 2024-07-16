@@ -7,7 +7,7 @@ import { Injectable } from '@nestjs/common';
 
 interface IUpdateHousesByIds {
   network: WalletNetwork;
-  ids: number[];
+  ids: string[];
 }
 
 @Injectable()
@@ -18,7 +18,6 @@ export class UpdateHousesById {
   ) {}
 
   async execute({ network, ids }: IUpdateHousesByIds) {
-    console.log('ids', ids);
     const [houses, opensea] = await Promise.all([
       getHousesWithOwnerFromIds(ids, network),
       network === WalletNetwork.POLYGON

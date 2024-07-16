@@ -9,7 +9,7 @@ import { FindOptionsRelationByString, FindOptionsRelations, In } from 'typeorm';
 
 interface IGetHousesByIds {
   network: WalletNetwork;
-  ids: number[] | string[];
+  ids: string[];
   relations?: FindOptionsRelations<House> | FindOptionsRelationByString;
 }
 
@@ -23,7 +23,7 @@ export class GetHousesByIds {
 
   async execute({ network, ids, relations }: IGetHousesByIds) {
     try {
-      const idsNumber = ids.map((id) => {
+      ids.map((id) => {
         const value = Number(id);
 
         if (isNaN(value)) {
@@ -34,11 +34,11 @@ export class GetHousesByIds {
       });
 
       let housesDb = await this.houseRepository.find({
-        where: { id: In(idsNumber), network },
+        where: { id: In(ids), network },
         relations,
       });
 
-      const notIncluded = idsNumber.filter(
+      const notIncluded = ids.filter(
         (id) => !housesDb.map((hero) => hero.id).includes(id),
       );
 
@@ -83,7 +83,7 @@ export class HouseUpdateProcessor extends WorkerHost {
   }
 
   async process(
-    data: Job<{ houses: number[]; network: WalletNetwork }>,
+    data: Job<{ houses: string[]; network: WalletNetwork }>,
   ): Promise<any> {
     Logger.log('house update');
     try {

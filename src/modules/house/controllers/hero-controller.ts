@@ -8,7 +8,7 @@ export class HouseController {
 
   @Get(':id')
   async extension(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Param('network') network: WalletNetwork,
   ) {
     return await this.getHouse.execute({

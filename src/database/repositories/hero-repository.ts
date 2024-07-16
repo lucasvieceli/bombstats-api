@@ -2,7 +2,6 @@ import { DataSource, Repository } from 'typeorm';
 
 import { Hero } from '@/database/models/Hero';
 import { WalletNetwork } from '@/database/models/Wallet';
-import { getHeroesWithStakeOwnerFromIds } from '@/utils/web3/hero';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -40,7 +39,9 @@ export class HeroRepository extends Repository<Hero> {
       })
       .filter((hero) => hero !== null);
 
-    await this.upsert(heroes, ['id', 'network']);
+    const heroesToUpsert = heroes.map((hero) => ({ ...hero }));
+
+    await this.upsert(heroesToUpsert, ['id', 'network']);
 
     return heroes;
   }

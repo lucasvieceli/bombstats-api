@@ -33,7 +33,9 @@ export class GetHeroesFromWallet {
 
     const differentGenIds = heroesDb.filter(
       (hero) =>
-        !cleanedGenId.map((genId) => decodeIdHero(genId)).includes(hero.id),
+        !cleanedGenId
+          .map((genId) => decodeIdHero(genId))
+          .includes(hero.id as any),
     );
 
     const isEqual =

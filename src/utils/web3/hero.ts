@@ -153,7 +153,7 @@ export async function decodeHero(
 
   const rarity = decodeRarity(details);
   const result = {
-    id: heroId || decodeIdHero(details),
+    id: heroId.toString() || decodeIdHero(details),
     index: decodeIndex(details),
     rarity: parseHeroRarity(rarity),
     raritySimbol: parseHeroRaritySimbol(rarity),
@@ -221,7 +221,7 @@ export function decodeIdHero(details: number) {
     (detailsBigInt >> BigInt(idBitPosition)) & ((1n << BigInt(idBitSize)) - 1n),
   );
 
-  return id;
+  return id.toString();
 }
 function decodeLevel(details: number) {
   const detailsBigInt = BigInt(details);
@@ -476,10 +476,10 @@ export interface IHeroStakeOwner {
 }
 
 export async function getHeroesWithStakeOwnerFromIds(
-  ids: number[],
+  ids: string[],
   network: WalletNetwork,
 ) {
-  const chuncks = chunkArray<number>(ids, 200);
+  const chuncks = chunkArray<string>(ids, 200);
 
   let resultHeroes: IHeroStakeOwner[] = [];
   for (const ids of chuncks) {
@@ -491,7 +491,7 @@ export async function getHeroesWithStakeOwnerFromIds(
 }
 
 async function getHeroesWithStakeOwnerFromIdsFn(
-  ids: number[],
+  ids: string[],
   network: WalletNetwork,
 ): Promise<IHeroStakeOwner[]> {
   try {

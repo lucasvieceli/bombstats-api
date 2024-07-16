@@ -2,7 +2,6 @@ import { DataSource, Repository } from 'typeorm';
 
 import { House } from '@/database/models/House';
 import { WalletNetwork } from '@/database/models/Wallet';
-import { getHousesWithOwnerFromIds } from '@/utils/web3/house';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -39,8 +38,9 @@ export class HouseRepository extends Repository<House> {
         return house;
       })
       .filter((house) => house !== null);
+    const housesToUpsert = houses.map((hero) => ({ ...hero }));
 
-    await this.upsert(houses, ['id', 'network']);
+    await this.upsert(housesToUpsert, ['id', 'network']);
 
     return houses;
   }

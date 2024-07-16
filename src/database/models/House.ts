@@ -10,8 +10,10 @@ import {
 
 @Entity('house')
 export class House {
-  @PrimaryColumn()
-  id!: number;
+  @PrimaryColumn({
+    type: 'varchar',
+  })
+  id!: string;
 
   @PrimaryColumn({
     type: 'enum',

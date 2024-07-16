@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 
 interface IGetHouse {
   network: WalletNetwork;
-  id: number;
+  id: string;
 }
 
 @Injectable()

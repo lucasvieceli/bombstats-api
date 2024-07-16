@@ -9,7 +9,7 @@ import { FindOptionsRelationByString, FindOptionsRelations, In } from 'typeorm';
 
 interface IGetHeroesByIds {
   network: WalletNetwork;
-  ids: number[] | string[];
+  ids: string[];
   relations?: FindOptionsRelations<Hero> | FindOptionsRelationByString;
 }
 
@@ -23,7 +23,7 @@ export class GetHeroesByIds {
 
   async execute({ network, ids, relations }: IGetHeroesByIds) {
     try {
-      const idsNumber = ids.map((id) => {
+      ids.map((id) => {
         const value = Number(id);
 
         if (isNaN(value)) {
@@ -34,12 +34,12 @@ export class GetHeroesByIds {
       });
 
       let heroesDb = await this.heroRepository.find({
-        where: { id: In(idsNumber), network },
+        where: { id: In(ids), network },
         relations,
       });
 
-      const notIncluded = idsNumber.filter(
-        (id) => !heroesDb.map((hero) => hero.id).includes(id),
+      const notIncluded = ids.filter(
+        (id) => !heroesDb.map((hero) => hero.id).includes(id as any),
       );
 
       if (notIncluded.length > 0) {
@@ -86,7 +86,7 @@ export class HeroUpdateProcessor extends WorkerHost {
   }
 
   async process(
-    data: Job<{ heroes: number[]; network: WalletNetwork }>,
+    data: Job<{ heroes: string[]; network: WalletNetwork }>,
   ): Promise<any> {
     Logger.log('hero update');
     try {

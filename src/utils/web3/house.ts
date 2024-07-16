@@ -10,7 +10,7 @@ import {
 } from '@/utils/web3/web3';
 
 export interface IHouse {
-  id: number;
+  id: string;
   index: number;
   rarity: number;
   recovery: number;
@@ -20,21 +20,20 @@ export interface IHouse {
   wallet?: string;
 }
 
-export async function getHousesFromGenIds(genIds: number[]): Promise<IHouse[]> {
+export async function getHousesFromGenIds(genIds: string[]): Promise<IHouse[]> {
   return genIds.map((genId) => decodeHouse(genId));
 }
 
-function decodeHouse(details: number): IHouse {
-  const detailsBigInt = BigInt(details);
-  const rarity = decodeRarity(detailsBigInt);
+function decodeHouse(genId: string): IHouse {
+  const rarity = decodeRarity(genId);
   const result = {
-    id: decodeHouseId(detailsBigInt),
-    index: decodeIndex(detailsBigInt),
+    id: decodeHouseId(genId),
+    index: decodeIndex(genId),
     rarity,
-    recovery: decodeRecovery(detailsBigInt),
-    capacity: decodeCapacity(detailsBigInt),
-    blockNumber: decodeBlockNumber(detailsBigInt),
-    genId: details.toString(),
+    recovery: decodeRecovery(genId),
+    capacity: decodeCapacity(genId),
+    blockNumber: decodeBlockNumber(genId),
+    genId,
     name: parseNameHouse(rarity),
   };
   return result;
@@ -64,27 +63,39 @@ export const HOUSE_EMOJI_MAP: Record<string, string> = {
   5: process.env.EMOJI_PENT_HOUSE!,
 };
 
-export function decodeHouseId(detailsBigInt: bigint) {
-  return Number(detailsBigInt & ((1n << 30n) - 1n));
+export function decodeHouseId(details: string) {
+  const detailsBigInt = BigInt(details);
+
+  return (detailsBigInt & ((1n << 30n) - 1n)).toString();
 }
 
-function decodeIndex(detailsBigInt: bigint) {
+function decodeIndex(details: string) {
+  const detailsBigInt = BigInt(details);
+
   return Number((detailsBigInt >> 30n) & ((1n << 10n) - 1n));
 }
 
-function decodeRarity(detailsBigInt: bigint) {
+function decodeRarity(details: string) {
+  const detailsBigInt = BigInt(details);
+
   return Number((detailsBigInt >> 40n) & 31n);
 }
 
-function decodeRecovery(detailsBigInt: bigint) {
+function decodeRecovery(details: string) {
+  const detailsBigInt = BigInt(details);
+
   return Number((detailsBigInt >> 45n) & ((1n << 15n) - 1n));
 }
 
-function decodeCapacity(detailsBigInt: bigint) {
+function decodeCapacity(details: string) {
+  const detailsBigInt = BigInt(details);
+
   return Number((detailsBigInt >> 60n) & 31n);
 }
 
-function decodeBlockNumber(detailsBigInt: bigint) {
+function decodeBlockNumber(details: string) {
+  const detailsBigInt = BigInt(details);
+
   return Number((detailsBigInt >> 145n) & ((1n << 30n) - 1n));
 }
 
@@ -101,10 +112,10 @@ export interface IHouseOwner {
 }
 
 export async function getHousesWithOwnerFromIds(
-  ids: number[],
+  ids: string[],
   network: WalletNetwork,
 ) {
-  const chuncks = chunkArray<number>(ids, 300);
+  const chuncks = chunkArray<string>(ids, 300);
 
   let resultHeroes: IHouseOwner[] = [];
   for (const ids of chuncks) {
@@ -116,7 +127,7 @@ export async function getHousesWithOwnerFromIds(
 }
 
 async function getHousesWithOwnerFromIdsFn(
-  ids: number[],
+  ids: string[],
   network: WalletNetwork,
 ): Promise<IHouseOwner[]> {
   try {
@@ -199,7 +210,7 @@ async function getHousesWithOwnerFromIdsFn(
     });
 
     return houses.map((item, index) => ({
-      house: decodeHouse(item as number),
+      house: decodeHouse(item as string),
       owner: wallets[index] as string | null,
       market: market[index],
     }));

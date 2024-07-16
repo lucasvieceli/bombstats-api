@@ -72,10 +72,9 @@ export async function getWalletGenIds(wallet: string, network: WalletNetwork) {
         'uint256[]',
         result[0],
       ) as number[],
-      houses: fnInstance.eth.abi.decodeParameter(
-        'uint256[]',
-        result[1],
-      ) as number[],
+      houses: (
+        fnInstance.eth.abi.decodeParameter('uint256[]', result[1]) as number[]
+      ).map((v) => v.toString()),
       tokens: {
         bomb:
           Number(fnInstance.eth.abi.decodeParameter('uint256', result[2])) /

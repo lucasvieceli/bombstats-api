@@ -10,7 +10,7 @@ import { FindOptionsRelationByString, FindOptionsRelations } from 'typeorm';
 
 interface IGetHousesFromGenIds {
   network: WalletNetwork;
-  genIds: number[];
+  genIds: string[];
   wallet: string;
   relations?: FindOptionsRelations<Hero> | FindOptionsRelationByString;
 }
@@ -23,7 +23,7 @@ export class GetHousesFromWallet {
   ) {}
 
   async execute({ network, genIds, relations, wallet }: IGetHousesFromGenIds) {
-    const cleanedGenId = genIds.filter((id) => id != 0);
+    const cleanedGenId = genIds.filter((id) => id != '0');
 
     const housesDb = await this.houseRepository.find({
       where: { wallet: wallet.toLowerCase(), network },
@@ -34,9 +34,7 @@ export class GetHousesFromWallet {
 
     const differentGenIds = housesDb.filter(
       (house) =>
-        !cleanedGenId
-          .map((genId) => decodeHouseId(BigInt(genId)))
-          .includes(house.id),
+        !cleanedGenId.map((genId) => decodeHouseId(genId)).includes(house.id),
     );
 
     const isEqual =
@@ -47,7 +45,7 @@ export class GetHousesFromWallet {
     }
 
     const housesIdsDb = housesDb.map((house) => house.id);
-    const houses = (await getHousesFromGenIds(cleanedGenId as number[])).filter(
+    const houses = (await getHousesFromGenIds(cleanedGenId)).filter(
       (h) => !housesIdsDb.includes(h.id),
     );
 
