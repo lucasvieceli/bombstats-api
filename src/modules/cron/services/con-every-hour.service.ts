@@ -1,6 +1,7 @@
 import { ClaimToken } from '@/database/models/Claim';
 import { WalletNetwork } from '@/database/models/Wallet';
 import { UpdateClaimRanking } from '@/modules/claim/use-cases/update-claim-ranking';
+import { UpdateOpenSea } from '@/modules/cron/use-cases/update-open-sea';
 import { UpdateStakeRanking } from '@/modules/stake/use-cases/update-stake-ranking';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
@@ -11,6 +12,7 @@ export class CronEveryHour extends WorkerHost {
   constructor(
     private updateStakeRanking: UpdateStakeRanking,
     private updateClaimRanking: UpdateClaimRanking,
+    private updateOpenSea: UpdateOpenSea,
   ) {
     super();
   }
@@ -18,6 +20,7 @@ export class CronEveryHour extends WorkerHost {
   async process(): Promise<any> {
     Logger.debug('Cron job EVERY_HOUR', 'EVERY_HOUR');
     try {
+      await this.updateOpenSea.execute();
       await this.updateStakeRanking.execute({ network: WalletNetwork.POLYGON });
       await this.updateStakeRanking.execute({ network: WalletNetwork.BSC });
       await this.updateClaimRanking.execute({

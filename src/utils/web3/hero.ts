@@ -12,7 +12,7 @@ import {
 } from '@/utils/web3/web3';
 
 export interface IHero {
-  id: number;
+  id: string;
   index: number;
   rarity: string;
   raritySimbol: string;

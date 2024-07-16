@@ -14,6 +14,7 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import dataSource from './config';
 import { FarmAverageRepository } from '@/database/repositories/farm-average-repository';
 import { HouseRepository } from '@/database/repositories/house-repository';
+import { OpenSeaRepository } from '@/database/repositories/open-sea-repository';
 
 export const DatabaseModuleRoot = TypeOrmModule.forRoot(
   dataSource as TypeOrmModuleOptions,
@@ -35,5 +36,6 @@ export const DatabaseModules = {
     HeroRepository,
     FarmAverageRepository,
     HouseRepository,
+    OpenSeaRepository,
   ],
 };

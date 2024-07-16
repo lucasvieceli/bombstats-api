@@ -1,7 +1,8 @@
 import { House } from '@/database/models/House';
+import { NftType, OpenSea } from '@/database/models/OpenSea';
 import { WalletNetwork } from '@/database/models/Wallet';
 import { HouseRepository } from '@/database/repositories/house-repository';
-import { OpenSeaService } from '@/services/opeSea';
+import { OpenSeaRepository } from '@/database/repositories/open-sea-repository';
 import { getHousesWithOwnerFromIds } from '@/utils/web3/house';
 import { Injectable } from '@nestjs/common';
 
@@ -14,20 +15,20 @@ interface IUpdateHousesByIds {
 export class UpdateHousesById {
   constructor(
     private houseRepository: HouseRepository,
-    private openSeaService: OpenSeaService,
+    private openSeaRepository: OpenSeaRepository,
   ) {}
 
   async execute({ network, ids }: IUpdateHousesByIds) {
     const [houses, opensea] = await Promise.all([
       getHousesWithOwnerFromIds(ids, network),
       network === WalletNetwork.POLYGON
-        ? this.openSeaService.getCurrentPriceHouse(ids)
-        : [],
+        ? this.openSeaRepository.getByIds(ids, NftType.HERO)
+        : ([] as OpenSea[]),
     ]);
     return await this.houseRepository.updateOrInsertArray(
       houses.map((house) => {
         const existsMarket = house.market;
-        const existsOpenSea = opensea.find((o) => o.tokenId == house.house.id);
+        const existsOpenSea = opensea.find((o) => o.nftId == house.house.id);
 
         return {
           ...(house.house as unknown as House),
@@ -35,7 +36,7 @@ export class UpdateHousesById {
           updatedAt: new Date(),
           marketPrice: existsMarket ? house.market.price : null,
           marketToken: existsMarket ? house.market.tokenAddress : null,
-          openSeaPrice: existsOpenSea ? existsOpenSea.price : null,
+          openSeaPrice: existsOpenSea ? existsOpenSea.amount : null,
         };
       }),
       network,
