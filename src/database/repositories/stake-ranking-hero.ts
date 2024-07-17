@@ -20,7 +20,7 @@ export class StakeRankingHeroRepository extends Repository<StakeRankingHero> {
         order: {
           position: 'ASC',
         },
-        take: 20,
+        take: 50,
       }),
       this.count({
         where: {

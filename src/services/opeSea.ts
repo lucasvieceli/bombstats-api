@@ -16,26 +16,26 @@ export interface ITokenOpenSea {
 export class OpenSeaService {
   client;
   constructor() {
-    this.client = new OpenSeaStreamClient({
-      token: API_KEY!,
-      connectOptions: {
-        transport: WebSocket,
-      },
-      network: Network.MAINNET,
-    });
-    this.client.connect();
-    this.client.onItemListed('bomber-hero-polygon', () => {
-      console.log('hero listed polygon');
-    });
-    this.client.onItemSold('bomber-hero-polygon', () =>
-      console.log('hero sold polygon'),
-    );
-    this.client.onItemListed('bomber-house', () =>
-      console.log('house listed polygon'),
-    );
-    this.client.onItemSold('bomber-house', () =>
-      console.log('house sold polygon'),
-    );
+    // this.client = new OpenSeaStreamClient({
+    //   token: API_KEY!,
+    //   connectOptions: {
+    //     transport: WebSocket,
+    //   },
+    //   network: Network.MAINNET,
+    // });
+    // this.client.connect();
+    // this.client.onItemListed('bomber-hero-polygon', () => {
+    //   console.log('hero listed polygon');
+    // });
+    // this.client.onItemSold('bomber-hero-polygon', () =>
+    //   console.log('hero sold polygon'),
+    // );
+    // this.client.onItemListed('bomber-house', () =>
+    //   console.log('house listed polygon'),
+    // );
+    // this.client.onItemSold('bomber-house', () =>
+    //   console.log('house sold polygon'),
+    // );
   }
 
   async getCurrentPriceHero(tokenIds: number[] | string[]) {

@@ -66,7 +66,7 @@ export class ClaimRankingWalletRepository extends Repository<ClaimRankingWallet>
         order: {
           position: 'ASC',
         },
-        take: 20,
+        take: 50,
       }),
       this.count({ where: { token, network } }),
     ]);

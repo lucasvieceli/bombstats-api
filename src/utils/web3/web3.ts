@@ -65,6 +65,7 @@ export const ERRORS_RPC = [
   'reason: read ECONNRESET',
   'Unexpected token < in JSON at position 0',
   'did it run Out of Gas?',
+  'Invalid response',
 ];
 
 export function isErrorRPC(error: any) {
@@ -119,4 +120,38 @@ export function getRpcWeb3(network: WalletNetwork) {
     rpcUrl = rpcUrls[0];
   }
   return new Web3(new Web3.providers.HttpProvider(rpcUrl.url));
+}
+
+export function decodeInputTransaction(
+  inputData: string,
+  methodName: string,
+  abi: any,
+) {
+  try {
+    const method = abi.find((item) => item.name === methodName);
+    if (!method) {
+      throw new Error('Method depositCoinIntoHeroId not found in ABI');
+    }
+
+    const parameters = method.inputs.map((input) => input.type);
+
+    const decodedParameters = getRpcWeb3(
+      WalletNetwork.BSC,
+    ).eth.abi.decodeParameters(
+      parameters,
+      '0x' + inputData.slice(10), // Adicione '0x' para garantir que é um hex válido
+    );
+
+    const cleanDecodedParameters = parameters.map(
+      (_, index) => decodedParameters[index],
+    );
+
+    return cleanDecodedParameters;
+  } catch (e) {
+    if (isErrorRPC(e)) {
+      return decodeInputTransaction(inputData, methodName, abi);
+    }
+
+    throw e;
+  }
 }

@@ -61,12 +61,20 @@ import { HouseModules } from '@/modules/house/house.module';
         removeOnFail: true,
       },
     }),
+    BullModule.registerQueue({
+      name: 'webhook-quicknode',
+      defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    }),
   ],
   controllers: [
     ...ExtensionModules.controllers,
     ...WalletModules.controllers,
     ...StakeModules.controllers,
     ...ClaimModules.controllers,
+    ...CronModules.controllers,
     ...HeroModules.controllers,
     ...HouseModules.controllers,
   ],
@@ -81,7 +89,7 @@ import { HouseModules } from '@/modules/house/house.module';
     ...HouseModules.providers,
     SocketGateway,
     SocketService,
-    // AlchemyService,
+    AlchemyService,
     OpenSeaService,
   ],
 })

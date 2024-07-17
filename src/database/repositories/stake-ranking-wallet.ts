@@ -29,7 +29,7 @@ export class StakeRankingWalletRepository extends Repository<StakeRankingWallet>
         order: {
           position: 'ASC',
         },
-        take: 20,
+        take: 50,
       }),
       this.count({
         where: {

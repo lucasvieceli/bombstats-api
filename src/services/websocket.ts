@@ -38,6 +38,12 @@ export class SocketService {
       network: string;
     }
   > = new Map();
+  private readonly connectedRetail: Map<
+    string,
+    {
+      socket: Socket;
+    }
+  > = new Map();
 
   handleConnection(socket: Socket): void {
     const clientId = socket.id;
@@ -56,6 +62,10 @@ export class SocketService {
           network: (params.network as string).toUpperCase(),
         },
       );
+    } else if (params.retail) {
+      this.connectedRetail.set(clientId, {
+        socket,
+      });
     } else {
       this.connectedClients.set(clientId, {
         socket,
@@ -63,6 +73,7 @@ export class SocketService {
       });
     }
     console.log({
+      connectedRetail: this.connectedRetail.size,
       connectionsClients: this.connectedClients.size,
       connectionsExtension: this.connectedExtension.size,
     });
@@ -123,6 +134,8 @@ export class SocketService {
           params.network as string,
         ),
       );
+    } else if (params.retail) {
+      this.connectedRetail.delete(socket.id);
     } else {
       this.connectedClients.delete(socket.id);
     }
