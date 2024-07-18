@@ -87,18 +87,20 @@ async function updateRpcStatuses(rpcUrls: RpcUrl[]) {
 async function checkRpcStatus(
   rpcUrl: RpcUrl,
 ): Promise<{ online: boolean; latency: number | null }> {
-  const timeout = new Promise<{ online: boolean; latency: number | null }>(
-    (_, reject) => setTimeout(() => reject(new Error('timeout')), 2000),
-  );
+  // const timeout = new Promise<{ online: boolean; latency: number | null }>(
+  //   (_, reject) => setTimeout(() => reject(new Error('timeout')), 2000),
+  // );
 
   const check = async () => {
     const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl.url));
     await web3.eth.net.isListening();
-    return { online: true, latency: await getPing(rpcUrl.url) };
+    // return { online: true, latency: await getPing(rpcUrl.url) };
+    return { online: true, latency: 1 };
   };
 
   try {
-    return await Promise.race([check(), timeout]);
+    // return await Promise.race([check(), timeout]);
+    return await check();
   } catch (error) {
     // console.log('error', rpcUrl, error);
     return { online: false, latency: null };
