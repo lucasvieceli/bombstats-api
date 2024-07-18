@@ -34,7 +34,7 @@ interface RpcUrl {
 }
 
 const rpcUrlsPolygon: RpcUrl[] = [
-  { url: 'https://polygon-rpc.com', online: true },
+  // { url: 'https://polygon-rpc.com', online: true },
   { url: 'https://rpc.ankr.com/polygon', online: true },
   { url: 'https://rpc-mainnet.maticvigil.com', online: true },
   { url: 'https://rpc-mainnet.matic.quiknode.pro', online: true },
