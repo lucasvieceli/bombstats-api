@@ -122,20 +122,14 @@ async function getPing(url: string): Promise<number | null> {
 
 export async function startRpcStatusUpdater(interval: number = 60000) {
   // 60 seconds
-  const timebefore = new Date();
-
   await Promise.all([
     updateRpcStatuses(rpcUrlsPolygon),
     updateRpcStatuses(rpcUrlsBsc),
   ]);
-  console.log({ rpcUrlsPolygon, rpcUrlsBsc });
 
-  const timeafter = new Date();
-  console.log(differenceInSeconds(timeafter, timebefore), 'asdsadsa');
   setInterval(() => {
     updateRpcStatuses(rpcUrlsPolygon);
     updateRpcStatuses(rpcUrlsBsc);
-    console.log({ rpcUrlsPolygon, rpcUrlsBsc });
   }, interval);
 }
 
@@ -147,6 +141,14 @@ export function getRpcWeb3(network: WalletNetwork) {
   let rpcUrl = onlineRpcUrls[Math.floor(Math.random() * onlineRpcUrls.length)];
 
   if (!rpcUrl) {
+    if (network === WalletNetwork.POLYGON) {
+      console.log('nenhum rpc online polygon');
+      updateRpcStatuses(rpcUrlsPolygon);
+    } else {
+      console.log('nenhum rpc online bsc');
+      updateRpcStatuses(rpcUrlsBsc);
+    }
+
     rpcUrl = rpcUrls[0];
   }
   return new Web3(new Web3.providers.HttpProvider(rpcUrl.url));
