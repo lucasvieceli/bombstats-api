@@ -31,7 +31,7 @@ export class UpdateOpenSea {
         };
       });
 
-      await this.openSeaRepository.save(openSea);
+      await this.openSeaRepository.updateOrInsert(openSea);
     } catch (error) {
       Logger.error(`error ${error.message}`, 'UpdateOpenSea');
     }

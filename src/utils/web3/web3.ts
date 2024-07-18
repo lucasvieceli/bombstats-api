@@ -1,6 +1,7 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
 import { ABI_MULTI_CALL } from '@/utils/web3/ABI/multi-call-abi';
+import { promise as ping } from 'ping';
 
 import Web3 from 'web3';
 
@@ -29,13 +30,13 @@ export function getContractHeroBsc(web3: Web3) {
 interface RpcUrl {
   url: string;
   online: boolean;
+  latency?: number;
 }
 
 const rpcUrlsPolygon: RpcUrl[] = [
   { url: 'https://polygon-rpc.com', online: true },
   { url: 'https://rpc.ankr.com/polygon', online: true },
   { url: 'https://rpc-mainnet.maticvigil.com', online: true },
-  // { url: 'https://rpc-amoy.polygon.technology', online: true },
   { url: 'https://rpc-mainnet.matic.quiknode.pro', online: true },
   { url: 'https://rpc-mainnet.matic.network', online: true },
   { url: 'https://matic-mainnet.chainstacklabs.com', online: true },
@@ -58,6 +59,7 @@ const rpcUrlsBsc: RpcUrl[] = [
   { url: 'https://bsc-dataseed4.ninicoin.io', online: true },
   { url: 'https://bsc-rpc.publicnode.com', online: true },
 ];
+
 export const ERRORS_RPC = [
   'reason: Unexpected token O in JSON at',
   'reason: getaddrinfo ENOTFOUND',
@@ -74,26 +76,43 @@ export function isErrorRPC(error: any) {
 
 async function updateRpcStatuses(rpcUrls: RpcUrl[]) {
   await Promise.all(
-    rpcUrls.map(
-      async (rpcUrl) => (rpcUrl.online = await checkRpcStatus(rpcUrl)),
-    ),
+    rpcUrls.map(async (rpcUrl) => {
+      const status = await checkRpcStatus(rpcUrl);
+      rpcUrl.online = status.online;
+      rpcUrl.latency = status.latency;
+    }),
   );
 }
-async function checkRpcStatus(rpcUrl: RpcUrl): Promise<boolean> {
-  const timeout = new Promise<boolean>((_, reject) =>
-    setTimeout(() => reject(new Error('timeout')), 2000),
+
+async function checkRpcStatus(
+  rpcUrl: RpcUrl,
+): Promise<{ online: boolean; latency: number | null }> {
+  const timeout = new Promise<{ online: boolean; latency: number | null }>(
+    (_, reject) => setTimeout(() => reject(new Error('timeout')), 2000),
   );
 
   const check = async () => {
     const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl.url));
     await web3.eth.net.isListening();
-    return true;
+    return { online: true, latency: await getPing(rpcUrl.url) };
   };
 
   try {
     return await Promise.race([check(), timeout]);
   } catch (error) {
-    return false;
+    // console.log('error', rpcUrl, error);
+    return { online: false, latency: null };
+  }
+}
+
+async function getPing(url: string): Promise<number | null> {
+  const host = new URL(url).hostname;
+  try {
+    const res = await ping.probe(host);
+    return res.time; // returns the latency in ms
+  } catch (e) {
+    console.log(e);
+    return null;
   }
 }
 
@@ -106,6 +125,7 @@ export async function startRpcStatusUpdater(interval: number = 60000) {
   setInterval(() => {
     updateRpcStatuses(rpcUrlsPolygon);
     updateRpcStatuses(rpcUrlsBsc);
+    console.log(rpcUrlsPolygon);
   }, interval);
 }
 
