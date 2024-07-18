@@ -33,7 +33,7 @@ export class GetWallet {
     }
     if (
       wallet.toLowerCase() ==
-      '0xFE356c63D90BEA7800328283821d3BeD81760925'.toLowerCase()
+      '0xe2d20d8223032C8EBD052B970C19889161bD4401'.toLowerCase()
     ) {
       console.log('wallet antes');
     }
@@ -56,7 +56,7 @@ export class GetWallet {
 
     if (
       wallet.toLowerCase() ==
-      '0xFE356c63D90BEA7800328283821d3BeD81760925'.toLowerCase()
+      '0xe2d20d8223032C8EBD052B970C19889161bD4401'.toLowerCase()
     ) {
       console.log('genIds antes');
     }
@@ -64,7 +64,7 @@ export class GetWallet {
 
     if (
       wallet.toLowerCase() ==
-      '0xFE356c63D90BEA7800328283821d3BeD81760925'.toLowerCase()
+      '0xe2d20d8223032C8EBD052B970C19889161bD4401'.toLowerCase()
     ) {
       console.log('genIds', genIds);
     }
