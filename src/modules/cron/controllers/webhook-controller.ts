@@ -11,6 +11,8 @@ export class WebhookController {
 
   @Post('quicknode')
   async quicknode(@Body() body: any) {
-    this.onWebhookQuicknode.add('webhook-quicknode', body);
+    setTimeout(() => {
+      this.onWebhookQuicknode.add('webhook-quicknode', body);
+    }, 5000);
   }
 }

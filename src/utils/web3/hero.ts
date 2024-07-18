@@ -602,7 +602,6 @@ async function getHeroesWithStakeOwnerFromIdsFn(
       })),
     );
   } catch (e) {
-    console.log('e akiii', e);
     if (isErrorRPC(e)) {
       return getHeroesWithStakeOwnerFromIdsFn(ids, network);
     }
