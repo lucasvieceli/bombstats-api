@@ -1,6 +1,7 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
 import { ABI_MULTI_CALL } from '@/utils/web3/ABI/multi-call-abi';
+import { differenceInSeconds } from 'date-fns';
 import { promise as ping } from 'ping';
 
 import Web3 from 'web3';
@@ -41,6 +42,9 @@ const rpcUrlsPolygon: RpcUrl[] = [
   { url: 'https://rpc-mainnet.matic.network', online: true },
   { url: 'https://matic-mainnet.chainstacklabs.com', online: true },
   { url: 'https://polygon-bor-rpc.publicnode.com', online: true },
+  { url: 'https://matic-mainnet-full-rpc.bwarelabs.com', online: true },
+  { url: 'https://polygon.gateway.tenderly.co', online: true },
+  { url: 'https:///polygon.drpc.org', online: true },
 ];
 
 const rpcUrlsBsc: RpcUrl[] = [
@@ -87,20 +91,18 @@ async function updateRpcStatuses(rpcUrls: RpcUrl[]) {
 async function checkRpcStatus(
   rpcUrl: RpcUrl,
 ): Promise<{ online: boolean; latency: number | null }> {
-  // const timeout = new Promise<{ online: boolean; latency: number | null }>(
-  //   (_, reject) => setTimeout(() => reject(new Error('timeout')), 2000),
-  // );
+  const timeout = new Promise<{ online: boolean; latency: number | null }>(
+    (_, reject) => setTimeout(() => reject(new Error('timeout')), 2000),
+  );
 
   const check = async () => {
     const web3 = new Web3(new Web3.providers.HttpProvider(rpcUrl.url));
     await web3.eth.net.isListening();
-    // return { online: true, latency: await getPing(rpcUrl.url) };
-    return { online: true, latency: 1 };
+    return { online: true, latency: await getPing(rpcUrl.url) };
   };
 
   try {
-    // return await Promise.race([check(), timeout]);
-    return await check();
+    return await Promise.race([check(), timeout]);
   } catch (error) {
     // console.log('error', rpcUrl, error);
     return { online: false, latency: null };
@@ -120,14 +122,20 @@ async function getPing(url: string): Promise<number | null> {
 
 export async function startRpcStatusUpdater(interval: number = 60000) {
   // 60 seconds
+  const timebefore = new Date();
+
   await Promise.all([
     updateRpcStatuses(rpcUrlsPolygon),
     updateRpcStatuses(rpcUrlsBsc),
   ]);
+  console.log({ rpcUrlsPolygon, rpcUrlsBsc });
+
+  const timeafter = new Date();
+  console.log(differenceInSeconds(timeafter, timebefore), 'asdsadsa');
   setInterval(() => {
     updateRpcStatuses(rpcUrlsPolygon);
     updateRpcStatuses(rpcUrlsBsc);
-    console.log(rpcUrlsPolygon);
+    console.log({ rpcUrlsPolygon, rpcUrlsBsc });
   }, interval);
 }
 
