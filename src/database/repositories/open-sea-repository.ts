@@ -17,4 +17,10 @@ export class OpenSeaRepository extends Repository<OpenSea> {
       },
     });
   }
+
+  async updateOrInsert(openSea: Partial<OpenSea>) {
+    await this.upsert(openSea, ['nftId', 'nftType']);
+
+    return openSea;
+  }
 }

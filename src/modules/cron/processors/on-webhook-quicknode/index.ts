@@ -1,10 +1,11 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { UpdateHeroesById } from '@/modules/hero/use-cases/update-heroes-by-id';
+import { ABI_MARKET } from '@/utils/web3/ABI/market';
 import { ABI_STAKE } from '@/utils/web3/ABI/stake-abi';
 import { decodeInputTransaction } from '@/utils/web3/web3';
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bullmq';
+import { Job, Queue } from 'bullmq';
 
 export type BodyQuicknode = {
   matchedReceipts: Array<{
@@ -58,25 +59,29 @@ export type BodyQuicknode = {
 
 @Processor('webhook-quicknode', { concurrency: 10 })
 export class OnWebhookQuicknode extends WorkerHost {
-  constructor(private updateHeroesById: UpdateHeroesById) {
+  constructor(
+    private updateHeroesById: UpdateHeroesById,
+    @InjectQueue('on-hero-retail') private readonly onHeroRetail: Queue,
+    @InjectQueue('on-house-retail') private readonly onHouseRetail: Queue,
+  ) {
     super();
   }
 
   async process(data: Job<BodyQuicknode>): Promise<any> {
     const body = data.data;
+
     body.matchedTransactions.forEach(async (transaction) => {
       const network =
         transaction.chainId === '0x89'
           ? WalletNetwork.POLYGON
           : WalletNetwork.BSC;
-
       if (
         [
           process.env.CONTRACT_STAKE_POLYGON!.toLowerCase(),
           process.env.CONTRACT_STAKE_BSC!.toLowerCase(),
         ].includes(transaction.to.toLowerCase())
       ) {
-        this.onUpdateStake(transaction, network);
+        this.onHero(transaction, network);
         // on change stake hero
       } else if (
         [
@@ -84,11 +89,7 @@ export class OnWebhookQuicknode extends WorkerHost {
           process.env.CONTRACT_HERO_MARKET_BSC!.toLowerCase(),
         ].includes(transaction.to.toLowerCase())
       ) {
-        if (transaction.input.startsWith('0x23b70d76')) {
-          console.log('hero listed ', transaction);
-        } else if (transaction.input.startsWith('0xd6febde8')) {
-          console.log('hero sold ', transaction);
-        }
+        this.onHero(transaction, network);
         // on list hero
       } else if (
         [
@@ -96,16 +97,67 @@ export class OnWebhookQuicknode extends WorkerHost {
           process.env.CONTRACT_HOUSE_MARKET_BSC!.toLowerCase(),
         ].includes(transaction.to.toLowerCase())
       ) {
-        if (transaction.input.startsWith('0x23b70d76')) {
-          console.log('house listed ', transaction);
-        } else if (transaction.input.startsWith('0xd6febde8')) {
-          console.log('house sold ', transaction);
-        }
+        this.onHouse(transaction, network);
         // on list house
       }
     });
   }
 
+  async onHouse(
+    data: BodyQuicknode['matchedTransactions'][0],
+    network: WalletNetwork,
+  ) {
+    if (
+      data.input.startsWith('0x23b70d76') ||
+      data.input.startsWith('0xd6febde8')
+    ) {
+      const method = data.input.startsWith('0x23b70d76')
+        ? 'createOrder'
+        : 'buy';
+
+      const result = decodeInputTransaction(data.input, method, ABI_MARKET);
+
+      Logger.debug(`${method} ${result?.[0]}`, 'OnWebhookQuicknode');
+      if (result?.[0].toString()) {
+        await this.onHouseRetail.add('on-house-retail', {
+          id: result[0].toString(),
+          amount: Number(result[1]) / 10 ** 18,
+          type: method === 'createOrder' ? 'listed' : 'sold',
+          network,
+          marketPlace: 'market',
+          tokenAddress: result?.[2],
+        });
+      }
+    }
+  }
+
+  async onHero(
+    data: BodyQuicknode['matchedTransactions'][0],
+    network: WalletNetwork,
+  ) {
+    if (
+      data.input.startsWith('0x23b70d76') ||
+      data.input.startsWith('0xd6febde8')
+    ) {
+      const method = data.input.startsWith('0x23b70d76')
+        ? 'createOrder'
+        : 'buy';
+
+      const result = decodeInputTransaction(data.input, method, ABI_MARKET);
+
+      Logger.debug(`${method} ${result?.[0]}`, 'OnWebhookQuicknode');
+      if (result?.[0].toString()) {
+        await this.onHeroRetail.add('on-hero-retail', {
+          id: result[0].toString(),
+          amount: Number(result[1]) / 10 ** 18,
+          type: method === 'createOrder' ? 'listed' : 'sold',
+          network,
+          marketPlace: 'market',
+          tokenAddress: result?.[2],
+        });
+      }
+    }
+  }
   async onUpdateStake(
     transaction: BodyQuicknode['matchedTransactions'][0],
     network: WalletNetwork,

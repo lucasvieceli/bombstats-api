@@ -210,7 +210,7 @@ async function getHousesWithOwnerFromIdsFn(
     });
 
     return houses.map((item, index) => ({
-      house: decodeHouse(item as string),
+      house: decodeHouse(item.toString()),
       owner: wallets[index] as string | null,
       market: market[index],
     }));

@@ -1,4 +1,5 @@
 import { HouseController } from '@/modules/house/controllers/hero-controller';
+import { OnHouseRetail } from '@/modules/house/processors/on-house-retail';
 import { GetHouse } from '@/modules/house/use-cases/get-house';
 import {
   GetHousesByIds,
@@ -16,5 +17,6 @@ export const HouseModules = {
     GetHouse,
     GetHousesFromWallet,
     UpdateHousesById,
+    OnHouseRetail,
   ],
 };

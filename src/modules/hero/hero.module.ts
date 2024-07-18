@@ -1,4 +1,5 @@
 import { HeroController } from '@/modules/hero/controllers/hero-controller';
+import { OnHeroRetail } from '@/modules/hero/processors/on-hero-retail';
 import { GetHero } from '@/modules/hero/use-cases/get-hero';
 import {
   GetHeroesByIds,
@@ -16,5 +17,6 @@ export const HeroModules = {
     GetHero,
     GetHeroesFromWallet,
     UpdateHeroesById,
+    OnHeroRetail,
   ],
 };

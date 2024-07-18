@@ -1,3 +1,5 @@
+import { Hero } from '@/database/models/Hero';
+import { House } from '@/database/models/House';
 import { WalletNetwork } from '@/database/models/Wallet';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
@@ -42,6 +44,7 @@ export class SocketService {
     string,
     {
       socket: Socket;
+      network: WalletNetwork;
     }
   > = new Map();
 
@@ -65,6 +68,9 @@ export class SocketService {
     } else if (params.retail) {
       this.connectedRetail.set(clientId, {
         socket,
+        network: (
+          params.network as string
+        )?.toUpperCase() as unknown as WalletNetwork,
       });
     } else {
       this.connectedClients.set(clientId, {
@@ -164,6 +170,14 @@ export class SocketService {
     });
   }
 
+  emitRetail(data: IRetailData, networkParam: WalletNetwork): void {
+    for (const { socket, network } of this.connectedRetail.values()) {
+      if (network === networkParam) {
+        socket.emit('retail', data);
+      }
+    }
+  }
+
   getTotalExtensionOnline(network: WalletNetwork): number {
     return Array.from(this.connectedExtension.values()).filter(
       (v) => v.network === network.toUpperCase(),
@@ -204,4 +218,13 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   // Implement other Socket.IO event handlers and message handlers
+}
+
+interface IRetailData {
+  hero?: Hero;
+  house?: House;
+  type: 'sold' | 'listed';
+  soldPrice?: number;
+  tokenAddress?: string;
+  marketPlace: 'opensea' | 'market';
 }

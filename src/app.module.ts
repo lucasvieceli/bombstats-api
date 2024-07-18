@@ -5,15 +5,14 @@ import {
 import { ClaimModules } from '@/modules/claim/claim.module';
 import { CronModules } from '@/modules/cron/cron.module';
 import { ExtensionModules } from '@/modules/extension/extension.module';
+import { HeroModules } from '@/modules/hero/hero.module';
+import { HouseModules } from '@/modules/house/house.module';
 import { StakeModules } from '@/modules/stake/stake.module';
 import { WalletModules } from '@/modules/wallet/wallet.module';
-import { SocketGateway, SocketService } from '@/services/websocket';
-import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
-import { HeroModules } from '@/modules/hero/hero.module';
-import { AlchemyService } from '@/services/alchemy';
 import { OpenSeaService } from '@/services/opeSea';
-import { HouseModules } from '@/modules/house/house.module';
+import { SocketGateway, SocketService } from '@/services/websocket';
+import { BullModule } from '@nestjs/bullmq';
+import { Module } from '@nestjs/common';
 
 @Module({
   imports: [
@@ -68,6 +67,20 @@ import { HouseModules } from '@/modules/house/house.module';
         removeOnFail: true,
       },
     }),
+    BullModule.registerQueue({
+      name: 'on-hero-retail',
+      defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    }),
+    BullModule.registerQueue({
+      name: 'on-house-retail',
+      defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    }),
   ],
   controllers: [
     ...ExtensionModules.controllers,
@@ -89,7 +102,7 @@ import { HouseModules } from '@/modules/house/house.module';
     ...HouseModules.providers,
     SocketGateway,
     SocketService,
-    AlchemyService,
+    // AlchemyService,
     OpenSeaService,
   ],
 })
