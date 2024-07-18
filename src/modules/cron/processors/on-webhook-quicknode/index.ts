@@ -145,7 +145,6 @@ export class OnWebhookQuicknode extends WorkerHost {
 
       const result = decodeInputTransaction(data.input, method, ABI_MARKET);
 
-      Logger.debug(`${method} ${result?.[0]}`, 'OnWebhookQuicknode');
       if (result?.[0].toString()) {
         await this.onHeroRetail.add('on-hero-retail', {
           id: result[0].toString(),

@@ -1,7 +1,16 @@
+import { WalletNetwork } from '@/database/models/Wallet';
 import { chunkArray } from '@/utils';
+import { NAMES_TOKENS_IDS_MAP } from '@/utils/web3/reward';
+import { InjectQueue } from '@nestjs/bullmq';
 import { Injectable, Logger } from '@nestjs/common';
-import { Network, OpenSeaStreamClient } from '@opensea/stream-js';
+import {
+  ItemListedEvent,
+  ItemSoldEvent,
+  Network,
+  OpenSeaStreamClient,
+} from '@opensea/stream-js';
 import axios from 'axios';
+import { Queue } from 'bullmq';
 import { WebSocket } from 'ws';
 
 const API_KEY = process.env.OPEN_SEA_KEY!;
@@ -15,27 +24,110 @@ export interface ITokenOpenSea {
 @Injectable()
 export class OpenSeaService {
   client;
-  constructor() {
-    // this.client = new OpenSeaStreamClient({
-    //   token: API_KEY!,
-    //   connectOptions: {
-    //     transport: WebSocket,
-    //   },
-    //   network: Network.MAINNET,
-    // });
-    // this.client.connect();
-    // this.client.onItemListed('bomber-hero-polygon', () => {
-    //   console.log('hero listed polygon');
-    // });
-    // this.client.onItemSold('bomber-hero-polygon', () =>
-    //   console.log('hero sold polygon'),
-    // );
-    // this.client.onItemListed('bomber-house', () =>
-    //   console.log('house listed polygon'),
-    // );
-    // this.client.onItemSold('bomber-house', () =>
-    //   console.log('house sold polygon'),
-    // );
+  constructor(
+    @InjectQueue('on-hero-retail') private readonly onHeroRetail: Queue,
+    @InjectQueue('on-house-retail') private readonly onHouseRetail: Queue,
+  ) {
+    this.client = new OpenSeaStreamClient({
+      token: API_KEY!,
+      connectOptions: {
+        transport: WebSocket,
+      },
+      network: Network.MAINNET,
+      onError: () => {},
+    });
+    this.client.connect();
+    this.client.onItemListed('bomber-hero-polygon', (event) =>
+      this.onHeroListed(event),
+    );
+    this.client.onItemSold('bomber-hero-polygon', (event) =>
+      this.onHeroSold(event),
+    );
+    this.client.onItemListed('bomber-house', (event) =>
+      this.onHouseListed(event),
+    );
+    this.client.onItemSold('bomber-house', (event) => this.onHouseSold(event));
+  }
+
+  async onHeroSold(event: ItemSoldEvent) {
+    console.log('event sold', JSON.stringify(event));
+    if (event.payload.payment_token.symbol !== 'MATIC') {
+      return;
+    }
+
+    const id = event.payload.item.nft_id.split('/')?.[2]?.toString();
+    const amount = Number(event.payload.sale_price) / 10 ** 18;
+
+    if (id) {
+      await this.onHeroRetail.add('on-hero-retail', {
+        id,
+        amount,
+        type: 'sold',
+        network: WalletNetwork.POLYGON,
+        marketPlace: 'opensea',
+        tokenAddress: NAMES_TOKENS_IDS_MAP.MATIC,
+      });
+    }
+  }
+  async onHeroListed(event: ItemListedEvent) {
+    console.log('event listed', JSON.stringify(event));
+    if (event.payload.payment_token.symbol !== 'MATIC') {
+      return;
+    }
+
+    const id = event.payload.item.nft_id.split('/')?.[2]?.toString();
+    const amount = Number(event.payload.base_price) / 10 ** 18;
+
+    if (id) {
+      await this.onHeroRetail.add('on-hero-retail', {
+        id,
+        amount,
+        type: 'listed',
+        network: WalletNetwork.POLYGON,
+        marketPlace: 'opensea',
+        tokenAddress: NAMES_TOKENS_IDS_MAP.MATIC,
+      });
+    }
+  }
+
+  async onHouseSold(event: ItemSoldEvent) {
+    if (event.payload.payment_token.symbol !== 'MATIC') {
+      return;
+    }
+
+    const id = event.payload.item.nft_id.split('/')?.[2]?.toString();
+    const amount = Number(event.payload.sale_price) / 10 ** 18;
+
+    if (id) {
+      await this.onHouseRetail.add('on-house-retail', {
+        id,
+        amount,
+        type: 'sold',
+        network: WalletNetwork.POLYGON,
+        marketPlace: 'opensea',
+        tokenAddress: NAMES_TOKENS_IDS_MAP.MATIC,
+      });
+    }
+  }
+
+  async onHouseListed(event: ItemListedEvent) {
+    if (event.payload.payment_token.symbol !== 'MATIC') {
+      return;
+    }
+
+    const id = event.payload.item.nft_id.split('/')?.[2]?.toString();
+    const amount = Number(event.payload.base_price) / 10 ** 18;
+
+    if (id) {
+      await this.onHouseRetail.add('on-house-retail', {
+        id,
+        amount,
+        type: 'listed',
+        network: WalletNetwork.POLYGON,
+        marketPlace: 'opensea',
+        tokenAddress: NAMES_TOKENS_IDS_MAP.MATIC,
+      });
+    }
   }
 
   async getCurrentPriceHero(tokenIds: number[] | string[]) {
