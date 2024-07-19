@@ -1,7 +1,6 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
 import { ABI_MULTI_CALL } from '@/utils/web3/ABI/multi-call-abi';
-import { differenceInSeconds } from 'date-fns';
 import { promise as ping } from 'ping';
 
 import Web3 from 'web3';
@@ -72,6 +71,7 @@ export const ERRORS_RPC = [
   'Unexpected token < in JSON at position 0',
   'did it run Out of Gas?',
   'Invalid response',
+  'evm timeout',
 ];
 
 export function isErrorRPC(error: any) {
@@ -181,6 +181,9 @@ export function decodeInputTransaction(
     return cleanDecodedParameters;
   } catch (e) {
     if (isErrorRPC(e)) {
+      if (e.message.includes('evm timeout')) {
+        console.log('deu time out rpc');
+      }
       return decodeInputTransaction(inputData, methodName, abi);
     }
 
