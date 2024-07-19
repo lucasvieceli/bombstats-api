@@ -1,6 +1,7 @@
 import { WalletNetwork } from '@/database/models/Wallet';
 import { ABI_HERO } from '@/utils/web3/ABI/hero-abi';
 import { ABI_MULTI_CALL } from '@/utils/web3/ABI/multi-call-abi';
+import { Logger } from '@nestjs/common';
 import { promise as ping } from 'ping';
 
 import Web3 from 'web3';
@@ -72,6 +73,7 @@ export const ERRORS_RPC = [
   'did it run Out of Gas?',
   'Invalid response',
   'evm timeout',
+  'rate limit exceeded',
 ];
 
 export function isErrorRPC(error: any) {
@@ -182,7 +184,13 @@ export function decodeInputTransaction(
   } catch (e) {
     if (isErrorRPC(e)) {
       if (e.message.includes('evm timeout')) {
-        console.log('deu time out rpc');
+        Logger.error('deu time out rpc', 'RPC');
+      }
+      if (e.message.includes('rate limit exceeded')) {
+        const totalOnlinePolygon = rpcUrlsPolygon.filter(
+          (rpcUrl) => rpcUrl.online,
+        ).length;
+        Logger.error(`rate limit exceeded ${totalOnlinePolygon} online`, 'RPC');
       }
       return decodeInputTransaction(inputData, methodName, abi);
     }
