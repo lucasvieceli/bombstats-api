@@ -1,6 +1,36 @@
 version: '3.9'
 
 services:
+  # bombstats-nginx:
+  #   container_name: bombstats-nginx
+  #   image: nginx:alpine
+  #   depends_on:
+  #     - bombstats-api
+  #   ports:
+  #     - 80:80
+  #     - 443:443
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   networks:
+  #     - bombstats-network
+  # bombstats-api:
+  #   container_name: bombstats-api
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - bombstats-db
+  #     - bombstats-redis
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     DB_HOST: bombstats-db
+  #   ports:
+  #     - 3000:3000
+  #   networks:
+  #     - bombstats-network
   bombstats-db:
     container_name: bombstats-db
     platform: linux/x86_64

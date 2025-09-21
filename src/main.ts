@@ -1,6 +1,6 @@
 import { startRpcStatusUpdater } from '@/utils/web3/web3';
 import { BaseExceptionFilter, NestFactory } from '@nestjs/core';
-import * as Sentry from '@sentry/nestjs';
+// import * as Sentry from '@sentry/nestjs';
 import { AppModule } from './app.module';
 import './instrument';
 import * as admin from 'firebase-admin';
@@ -12,10 +12,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors();
-  Sentry.setupNestErrorHandler(
-    app,
-    new BaseExceptionFilter(app.getHttpAdapter()),
-  );
+  // Sentry.setupNestErrorHandler(
+  //   app,
+  //   new BaseExceptionFilter(app.getHttpAdapter()),
+  // );
   admin.initializeApp({
     credential: admin.credential.cert(fireBaseConfig as any),
   });

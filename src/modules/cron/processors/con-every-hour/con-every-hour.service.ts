@@ -7,7 +7,7 @@ import { HeroUpdateQueue } from '@/modules/hero/processors/hero-update';
 import { UpdateStakeRanking } from '@/modules/stake/use-cases/update-stake-ranking';
 import { InjectQueue, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger, OnModuleInit } from '@nestjs/common';
-import * as Sentry from '@sentry/nestjs';
+// import * as Sentry from '@sentry/nestjs';
 import { Like } from 'typeorm';
 
 @Processor('cron-every-hour', { concurrency: 1 })
@@ -58,7 +58,7 @@ export class CronEveryHour extends WorkerHost implements OnModuleInit {
     } catch (e) {
       console.error(e, 'EVERY_HOUR');
       Logger.error(`${e.message} EVERY_HOUR`);
-      Sentry.captureException(e);
+      // Sentry.captureException(e);
     }
   }
 }
