@@ -50,6 +50,7 @@ export class UpdateClaimRanking {
     private claimRankingWalletRepository: ClaimRankingWalletRepository,
     private walletRepository: WalletRepository,
   ) {}
+  
 
   async execute({ network, token }: IUpdateClaimRanking) {
     const defaultBlock =
@@ -117,7 +118,7 @@ export class UpdateClaimRanking {
   async createWallets(allTransactions: Transaction[], network: WalletNetwork) {
     //remove duplicates
     const walletsIds = Array.from(
-      new Set(allTransactions.map((item) => item.from.toLowerCase())),
+      new Set(allTransactions.map((item) => item.from?.toLowerCase())),
     );
     const wallets = walletsIds.map((walletId) => ({
       walletId,
