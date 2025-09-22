@@ -139,7 +139,7 @@ export class UpdateClaimRanking {
 
     return transactions.filter(
       (transaction) =>
-        transaction.to.toLowerCase() !==
+        transaction.to?.toLowerCase() !==
         '0x7e396e19322DE2edA8CA300b436ED4eCA955c366'.toLowerCase(),
     );
   }
@@ -155,7 +155,7 @@ export class UpdateClaimRanking {
     });
     return transactions.filter(
       (transaction) =>
-        transaction.to.toLowerCase() !==
+        transaction.to?.toLowerCase() !==
         '0xBf6bDA4Fc8e627BbE5359F99Ec8ce757dABEa11c'.toLowerCase(),
     );
   }
