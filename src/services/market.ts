@@ -53,39 +53,39 @@ export class MarketService {
     network: WalletNetwork,
     tokensIds: string[] = [],
   ) {
-    try {
-      let nextPage = true;
-      let page = 1;
+    // try {
+    //   let nextPage = true;
+    //   let page = 1;
 
-      const url =
-        network === WalletNetwork.BSC
-          ? 'https://market-api.bombcrypto.io'
-          : 'https://market-api-polygon.bombcrypto.io';
-      while (nextPage) {
-        const { data } = await axios.get(
-          `${url}/api/v1/transactions/${collection}/search?status=listing&page=${page}&size=10000&order_by=desc%3Ablock_timestamp`,
-        );
+    //   const url =
+    //     network === WalletNetwork.BSC
+    //       ? 'https://market-api.bombcrypto.io'
+    //       : 'https://market-api-polygon.bombcrypto.io';
+    //   while (nextPage) {
+    //     const { data } = await axios.get(
+    //       `${url}/api/v1/transactions/${collection}/search?status=listing&page=${page}&size=10000&order_by=desc%3Ablock_timestamp`,
+    //     );
 
-        if (data.transactions.length === 0) {
-          break;
-        }
+    //     if (data.transactions.length === 0) {
+    //       break;
+    //     }
 
-        tokensIds = [
-          ...tokensIds,
-          ...data.transactions
-            .filter((hero) => Boolean(hero.token_id))
-            .map((hero) => hero.token_id),
-        ];
-        nextPage = data.has_more;
-        page++;
-      }
-    } catch (error) {
-      Logger.error(
-        'Erro ao buscar tokens na OpenSea: ' + error.message,
-        'OpenSeaService',
-      );
-      return tokensIds;
-    }
+    //     tokensIds = [
+    //       ...tokensIds,
+    //       ...data.transactions
+    //         .filter((hero) => Boolean(hero.token_id))
+    //         .map((hero) => hero.token_id),
+    //     ];
+    //     nextPage = data.has_more;
+    //     page++;
+    //   }
+    // } catch (error) {
+    //   Logger.error(
+    //     'Erro ao buscar tokens na OpenSea: ' + error.message,
+    //     'OpenSeaService',
+    //   );
+    //   return tokensIds;
+    // }
 
     return tokensIds;
   }
