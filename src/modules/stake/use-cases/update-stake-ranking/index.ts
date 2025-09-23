@@ -699,7 +699,6 @@ export class UpdateStakeRanking {
       },
     });
 
-    console.log('data', data);
     if (data.result.length == 10000) {
       return this.getTransactions([...values, ...data.result], {
         url,

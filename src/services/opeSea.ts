@@ -330,35 +330,35 @@ export class OpenSeaService {
 
   async getTokenIds(collection: string = 'bomber-hero-polygon') {
     let tokensIds: ITokenOpenSea[] = [];
-    let next: undefined | string | null = null;
+    let next: undefined | string | null = undefined;
 
-    return tokensIds
-    // try {
-    //   while (next === null || next) {
-    //     const data = await this.getTokensIdsInternal(collection, next);
-    //     tokensIds = [...tokensIds, ...data.tokensIds];
-    //     next = data.next;
+    // return tokensIds
+    try {
+      while (next === undefined || next) {
+        const data = await this.getTokensIdsInternal(collection, next);
+        tokensIds = [...tokensIds, ...data.tokensIds];
+        next = data.next;
 
-    //     Logger.debug(
-    //       'Encontrou ' + tokensIds.length + ' tokens na OpenSea',
-    //       'OpenSeaService',
-    //     );
-    //     await new Promise((resolve) => setTimeout(resolve, 1000));
-    //   }
+        Logger.debug(
+          'Encontrou ' + tokensIds.length + ' tokens na OpenSea',
+          'OpenSeaService',
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
 
-    //   //remove duplicates by tokenId and get the item
-    //   const duplicates = tokensIds.reduce((acc, current) => {
-    //     acc[current.tokenId] = [current];
-    //     return acc;
-    //   }, {});
+      //remove duplicates by tokenId and get the item
+      const duplicates = tokensIds.reduce((acc, current) => {
+        acc[current.tokenId] = [current];
+        return acc;
+      }, {});
 
-    //   return Object.values(duplicates).map((item) => item[0]);
-    // } catch (error) {
-    //   Logger.error(
-    //     'Erro ao buscar tokens na OpenSea: ' + error.message,
-    //     'OpenSeaService',
-    //   );
-    //   return tokensIds;
-    // }
+      return Object.values(duplicates).map((item) => item[0]);
+    } catch (error) {
+      Logger.error(
+        'Erro ao buscar tokens na OpenSea: ' + error.message,
+        'OpenSeaService',
+      );
+      return tokensIds;
+    }
   }
 }

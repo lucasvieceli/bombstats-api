@@ -50,7 +50,6 @@ export class UpdateClaimRanking {
     private claimRankingWalletRepository: ClaimRankingWalletRepository,
     private walletRepository: WalletRepository,
   ) {}
-  
 
   async execute({ network, token }: IUpdateClaimRanking) {
     const defaultBlock =
@@ -116,6 +115,10 @@ export class UpdateClaimRanking {
   }
 
   async createWallets(allTransactions: Transaction[], network: WalletNetwork) {
+    console.log(
+      'allTransactions',
+      allTransactions.filter((item) => !item.from),
+    );
     //remove duplicates
     const walletsIds = Array.from(
       new Set(allTransactions.map((item) => item.from?.toLowerCase())),
@@ -131,10 +134,11 @@ export class UpdateClaimRanking {
   async getTransactionsPolygon(lastBlockNumber: number, token: ClaimToken) {
     const contractAddress = contractPolygon[token];
     const transactions = await this.getTransactions([], {
-      url: 'https://api.polygonscan.com/api',
+      url: 'https://api.etherscan.io/v2/api',
       address: '0x7e396e19322DE2edA8CA300b436ED4eCA955c366',
       contractAddress,
-      apiKey: 'GSIGZP5QJ5NRNNDPHPKTFH4FCU4FYG4D3C',
+      apiKey: process.env.ETHERSCAN_KEY!,
+      chainid: 137,
       startBlock: lastBlockNumber,
     });
 
@@ -148,9 +152,10 @@ export class UpdateClaimRanking {
   async getTransactionsBSC(lastBlockNumber: number, token: ClaimToken) {
     const contractAddress = contractBSC[token];
     const transactions = await this.getTransactions([], {
-      url: 'https://api.bscscan.com/api',
+      url: 'https://api.etherscan.io/v2/api',
       address: '0xBf6bDA4Fc8e627BbE5359F99Ec8ce757dABEa11c',
-      apiKey: '4C3DSD3PYF1RFPHVHER2MD8B4U36RPF1NC',
+      apiKey: process.env.ETHERSCAN_KEY!,
+      chainid: 56,
       contractAddress,
       startBlock: lastBlockNumber,
     });
@@ -163,7 +168,7 @@ export class UpdateClaimRanking {
 
   async getTransactions(
     values: Transaction[] = [],
-    { url, address, apiKey, startBlock = 0, contractAddress }: any,
+    { url, address, apiKey, startBlock = 0, contractAddress, chainid }: any,
   ): Promise<Transaction[]> {
     const { data } = await axios.get(url, {
       params: {
@@ -177,6 +182,7 @@ export class UpdateClaimRanking {
         apikey: apiKey,
         page: 1,
         offset: 10000,
+        chainid,
       },
     });
 
@@ -186,6 +192,7 @@ export class UpdateClaimRanking {
         address,
         apiKey,
         startBlock: data.result[9999].blockNumber,
+        chainid,
       });
     }
 
