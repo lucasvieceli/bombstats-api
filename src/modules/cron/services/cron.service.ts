@@ -14,7 +14,7 @@ export class CronService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // this.cronEveryHour.add('cronEveryHour', '');
+    this.cronEveryHour.add('cronEveryHour', '');
   }
 
   @Cron(CronExpression.EVERY_HOUR)
