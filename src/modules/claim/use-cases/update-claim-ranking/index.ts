@@ -119,9 +119,13 @@ export class UpdateClaimRanking {
       'allTransactions',
       allTransactions.filter((item) => !item.from),
     );
-    //remove duplicates
+    // remove duplicates and drop empty wallet addresses to avoid invalid inserts
     const walletsIds = Array.from(
-      new Set(allTransactions.map((item) => item.from?.toLowerCase())),
+      new Set(
+        allTransactions
+          .map((item) => item.from?.toLowerCase())
+          .filter((walletId): walletId is string => Boolean(walletId)),
+      ),
     );
     const wallets = walletsIds.map((walletId) => ({
       walletId,

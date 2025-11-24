@@ -421,7 +421,11 @@ export class UpdateStakeRanking {
   async createWallets(allTransactions: Transaction[], network: WalletNetwork) {
     //remove duplicates
     const walletsIds = Array.from(
-      new Set(allTransactions.map((item) => item.from.toLowerCase())),
+      new Set(
+        allTransactions
+          .map((item) => item.from?.toLowerCase())
+          .filter((walletId): walletId is string => Boolean(walletId)),
+      ),
     );
     const wallets = walletsIds.map((walletId) => ({
       walletId,

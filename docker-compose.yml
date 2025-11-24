@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # bombstats-nginx:
   #   container_name: bombstats-nginx
