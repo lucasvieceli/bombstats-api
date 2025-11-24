@@ -137,12 +137,15 @@ export class UpdateClaimRanking {
 
   async getTransactionsPolygon(lastBlockNumber: number, token: ClaimToken) {
     const contractAddress = contractPolygon[token];
+    const apiKey = process.env.POLYGONSCAN_KEY ?? process.env.ETHERSCAN_KEY;
+    if (!apiKey) {
+      throw new Error('Missing PolygonScan/Etherscan API key');
+    }
     const transactions = await this.getTransactions([], {
-      url: 'https://api.etherscan.io/v2/api',
+      url: 'https://api.polygonscan.com/v2/api',
       address: '0x7e396e19322DE2edA8CA300b436ED4eCA955c366',
       contractAddress,
-      apiKey: process.env.ETHERSCAN_KEY!,
-      chainid: 137,
+      apiKey,
       startBlock: lastBlockNumber,
     });
 
@@ -155,11 +158,14 @@ export class UpdateClaimRanking {
 
   async getTransactionsBSC(lastBlockNumber: number, token: ClaimToken) {
     const contractAddress = contractBSC[token];
+    const apiKey = process.env.BSCSCAN_KEY ?? process.env.ETHERSCAN_KEY;
+    if (!apiKey) {
+      throw new Error('Missing BscScan/Etherscan API key');
+    }
     const transactions = await this.getTransactions([], {
-      url: 'https://api.etherscan.io/v2/api',
+      url: 'https://api.bscscan.com/v2/api',
       address: '0xBf6bDA4Fc8e627BbE5359F99Ec8ce757dABEa11c',
-      apiKey: process.env.ETHERSCAN_KEY!,
-      chainid: 56,
+      apiKey,
       contractAddress,
       startBlock: lastBlockNumber,
     });
@@ -172,22 +178,40 @@ export class UpdateClaimRanking {
 
   async getTransactions(
     values: Transaction[] = [],
-    { url, address, apiKey, startBlock = 0, contractAddress, chainid }: any,
+    {
+      url,
+      address,
+      apiKey,
+      startBlock = 0,
+      contractAddress,
+      chainid,
+    }: {
+      url: string;
+      address: string;
+      apiKey: string;
+      startBlock?: number;
+      contractAddress: string;
+      chainid?: number;
+    },
   ): Promise<Transaction[]> {
+    const params: Record<string, string | number> = {
+      module: 'account',
+      action: 'tokentx',
+      address,
+      startblock: startBlock,
+      endblock: 9999999999,
+      contractAddress,
+      sort: 'asc',
+      apikey: apiKey,
+      page: 1,
+      offset: 10000,
+    };
+    if (typeof chainid === 'number') {
+      params.chainid = chainid;
+    }
+
     const { data } = await axios.get(url, {
-      params: {
-        module: 'account',
-        action: 'tokentx',
-        address,
-        startblock: startBlock,
-        endblock: 9999999999,
-        contractAddress,
-        sort: 'asc',
-        apikey: apiKey,
-        page: 1,
-        offset: 10000,
-        chainid,
-      },
+      params,
     });
 
     if (!Array.isArray(data.result)) {
