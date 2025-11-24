@@ -190,12 +190,21 @@ export class UpdateClaimRanking {
       },
     });
 
+    if (!Array.isArray(data.result)) {
+      const message =
+        typeof data.result === 'string' ? data.result : 'Unexpected response';
+      const error = `Failed to fetch transactions: ${message}`;
+      console.warn(error, { status: data.status, chainid, startBlock });
+      throw new Error(error);
+    }
+
     if (data.result.length == 10000) {
       return this.getTransactions([...values, ...data.result], {
         url,
         address,
         apiKey,
         startBlock: data.result[9999].blockNumber,
+        contractAddress,
         chainid,
       });
     }
