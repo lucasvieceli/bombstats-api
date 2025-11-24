@@ -677,9 +677,9 @@ export class UpdateStakeRanking {
 
   async getTransactionsBSC(startBlock: number | string) {
     return this.getTransactions([], {
-      url: 'https://api.etherscan.io/v2/api ',
+      url: 'https://api.bscscan.com/api',
       address: process.env.CONTRACT_STAKE_BSC!,
-      apiKey: process.env.ETHERSCAN_KEY!,
+      apiKey: process.env.BSCSCAN_KEY!,
       startBlock,
       chainid: 56,
     });

@@ -5,14 +5,14 @@ export class UpdateMap1720268691813 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
         ALTER TABLE map_block
-                CHANGE mapId mapId char(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NULL;
+                MODIFY mapId char(36) NULL;
         `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
         ALTER TABLE map_block
-                CHANGE mapId mapId char(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci not NULL;
+                MODIFY mapId char(36) NOT NULL;
         `);
   }
 }

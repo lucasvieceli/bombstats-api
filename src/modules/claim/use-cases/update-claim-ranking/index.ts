@@ -156,11 +156,11 @@ export class UpdateClaimRanking {
   async getTransactionsBSC(lastBlockNumber: number, token: ClaimToken) {
     const contractAddress = contractBSC[token];
     const transactions = await this.getTransactions([], {
-      url: 'https://api.etherscan.io/v2/api',
+      url: 'https://api.bscscan.com/api',
       address: '0xBf6bDA4Fc8e627BbE5359F99Ec8ce757dABEa11c',
-      apiKey: process.env.ETHERSCAN_KEY!,
-      chainid: 56,
+      apiKey: process.env.BSCSCAN_KEY!,
       contractAddress,
+      chainid: 56,
       startBlock: lastBlockNumber,
     });
     return transactions.filter(
